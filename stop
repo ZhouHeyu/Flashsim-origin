@@ -1,0 +1,481 @@
+disksim_bus.c:#define numbuses	(disksim->businfo->numbuses)
+disksim_bus.c:    return disksim->businfo->buses[busno];
+disksim_bus.c:    if(disksim->businfo->buses[c])
+disksim_bus.c:      if(!strcmp(disksim->businfo->buses[c]->name, name)) {
+disksim_bus.c:	return disksim->businfo->buses[c];
+disksim_bus.c:   for (i=0; i < disksim->businfo->buses_len; i++) {
+disksim_bus.c:         if (disksim->businfo->bus_printidlestats) {
+disksim_bus.c:         if (disksim->businfo->bus_printarbwaitstats) {
+disksim_bus.c:  if(!disksim->businfo) {
+disksim_bus.c:    disksim->businfo = malloc(sizeof(businfo_t));
+disksim_bus.c:    bzero(disksim->businfo, sizeof(businfo_t));
+disksim_bus.c:   disksim->businfo->bus_printidlestats = disksim_bus_printidlestats;
+disksim_bus.c:   disksim->businfo->bus_printarbwaitstats = disksim_bus_printarbwaitstats;
+disksim_bus.c:     if(!disksim->businfo->buses[c]) { break; } 
+disksim_bus.c:   if(c == disksim->businfo->buses_len) {
+disksim_bus.c:     disksim->businfo->buses = realloc(disksim->businfo->buses,
+disksim_bus.c:       bzero(disksim->businfo->buses + c, (newlen/2)*sizeof(int *));
+disksim_bus.c:       bzero(disksim->businfo->buses, 2 * sizeof(int *));
+disksim_bus.c:     disksim->businfo->buses_len = newlen;
+disksim_bus.c:   disksim->businfo->buses[c] = result;
+disksim.c:   temp[((ALLOCSIZE/DISKSIM_EVENT_SIZE)-1)].next = disksim->extraq;
+disksim.c:   disksim->extraq = temp;
+disksim.c:   disksim->extraqlen = ALLOCSIZE / DISKSIM_EVENT_SIZE;
+disksim.c:   temp->next = disksim->extraq;
+disksim.c:   disksim->extraq = temp;
+disksim.c:   disksim->extraqlen++;
+disksim.c:  if(disksim->extraqlen == 0) {
+disksim.c:    temp = disksim->extraq;
+disksim.c:    disksim->extraq = disksim->extraq->next;
+disksim.c:  else if(disksim->extraqlen == 1) {
+disksim.c:    temp = disksim->extraq;
+disksim.c:    disksim->extraq = NULL;
+disksim.c:    temp = disksim->extraq;
+disksim.c:    disksim->extraq = disksim->extraq->next;
+disksim.c:  disksim->extraqlen--;
+disksim.c:   tmp = disksim->intq;
+disksim.c:   switch(disksim->trace_mode) {
+disksim.c:     if(write(disksim->tracepipes[1], (char *)newint, sizeof(event)) <= 0)
+disksim.c:	 //	 printf("addtointq() -- master write fd = %d\n", disksim->tracepipes[1]);
+disksim.c:       ddbg_assert(read(disksim->tracepipes[0], (char *)&tmpevt, sizeof(event)) > 0);
+disksim.c:   if (disksim->intq == NULL) {
+disksim.c:      disksim->intq = newint;
+disksim.c:   else if (newint->time < disksim->intq->time) {
+disksim.c:      newint->next = disksim->intq;
+disksim.c:      disksim->intq->prev = newint;
+disksim.c:      disksim->intq = newint;
+disksim.c:      event *run = disksim->intq;
+disksim.c:   if (disksim->intq == NULL) {
+disksim.c:   temp = disksim->intq;
+disksim.c:   disksim->intq = disksim->intq->next;
+disksim.c:   if (disksim->intq != NULL) {
+disksim.c:      disksim->intq->prev = NULL;
+disksim.c:   tmp = disksim->intq;
+disksim.c:      disksim->intq = curr->next;
+disksim.c:   if (disksim->external_control | disksim->synthgen | disksim->iotrace) {
+disksim.c:   if (disksim->synthgen) {
+disksim.c:  //  disksim->seedval = 1207981;
+disksim.c:   if (disksim->synthgen) {
+disksim.c:   if (disksim->external_control | disksim->synthgen | disksim->iotrace) {
+disksim.c:   disksim->issuefunc_ctlrsmart = NULL;
+disksim.c:   disksim->queuefind_ctlrsmart = NULL;
+disksim.c:   disksim->wakeupfunc_ctlrsmart = NULL;
+disksim.c:   disksim->donefunc_ctlrsmart_read = NULL;
+disksim.c:   disksim->donefunc_ctlrsmart_write = NULL;
+disksim.c:   disksim->donefunc_cachemem_empty = NULL;
+disksim.c:   disksim->donefunc_cachedev_empty = NULL;
+disksim.c:   disksim->idlework_cachemem = NULL;
+disksim.c:   disksim->idlework_cachedev = NULL;
+disksim.c:   disksim->concatok_cachemem = NULL;
+disksim.c:   disksim->enablement_disk = NULL;
+disksim.c:   disksim->timerfunc_disksim = NULL;
+disksim.c:   disksim->timerfunc_ioqueue = NULL;
+disksim.c:   disksim->timerfunc_cachemem = NULL;
+disksim.c:   disksim->timerfunc_cachedev = NULL;
+disksim.c:   disksim->timerfunc_disksim = stat_warmup_done;
+disksim.c:   disksim->external_io_done_notify = NULL;
+disksim.c:   int val = (disksim->synthgen) ? 0 : 1;
+disksim.c:   iotrace_initialize_file (disksim->iotracefile, disksim->traceformat, PRINT_TRACEFILE_HEADER);
+disksim.c:   while (disksim->intq) {
+disksim.c:   if (disksim->external_control | disksim->synthgen | disksim->iotrace) {
+disksim.c:   if (disksim->synthgen) {
+disksim.c:      pf_initialize(disksim->seedval);
+disksim.c:      DISKSIM_srand48(disksim->seedval);
+disksim.c:   if (disksim->external_control | disksim->synthgen | disksim->iotrace) {
+disksim.c:   if (disksim->synthgen) {
+disksim.c:   disksim->external_io_done_notify = func;
+disksim.c:   if (disksim->synthgen) {
+disksim.c:   if (disksim->external_control) {
+disksim.c:      disksim->external_io_done_notify (curr);
+disksim.c:	if ((disksim->iotrace) && io_using_external_event(curr)) {
+disksim.c:	  if ((temp = io_get_next_external_event(disksim->iotracefile)) == NULL) {
+disksim.c:            disksim->stop_sim = TRUE;
+disksim.c://printf ("disksim_checkpoint: simtime %f, totalreqs %d\n", simtime, disksim->totalreqs);
+disksim.c:   if (disksim->checkpoint_disable) {
+disksim.c:   if (disksim->iotracefile) {
+disksim.c:      if (strcmp (disksim->iotracefilename, "stdin") == 0) {
+disksim.c:      fflush (disksim->iotracefile);
+disksim.c:      fgetpos (disksim->iotracefile, &disksim->iotracefileposition);
+disksim.c:      fgetpos (outios, &disksim->outiosfileposition);
+disksim.c:      fgetpos (outputfile, &disksim->outputfileposition);
+disksim.c:   fwrite (disksim, disksim->totallength, 1, checkpointfile);
+disksim.c:   disksim->stop_sim = TRUE;
+disksim.c:   if (disksim->warmup_event) {
+disksim.c:      addtointq((event *)disksim->warmup_event);
+disksim.c:      disksim->warmup_event = NULL;
+disksim.c:   if (disksim->checkpoint_interval > 0.0) {
+disksim.c:      disksim_register_checkpoint (disksim->checkpoint_interval);
+disksim.c:   if (disksim->iotrace) {
+disksim.c:      if ((curr = io_get_next_external_event(disksim->iotracefile)) == NULL) {
+disksim.c:      if ((disksim->traceformat != VALIDATE) && (disksim->closedios == 0)) {
+disksim.c:      } else if (disksim->closedios) {
+disksim.c:         curr->time = simtime + disksim->closedthinktime;
+disksim.c:         for (iocnt=1; iocnt < disksim->closedios; iocnt++) {
+disksim.c:            curr->next = io_get_next_external_event(disksim->iotracefile);
+disksim.c:               curr->time = simtime + disksim->closedthinktime;
+disksim.c:    switch(disksim->trace_mode) {
+disksim.c:      if (disksim->checkpoint_interval) {
+disksim.c:	disksim_register_checkpoint(simtime + disksim->checkpoint_interval);
+disksim.c:      disksim_checkpoint (disksim->checkpointfilename);
+disksim.c:      strcpy (disksim->outputfilename, filename);
+disksim.c:      disksim->checkpoint_disable = 1;
+disksim.c:      assert (disksim->external_control == 0);
+disksim.c:      disksim->iotrace = 1;
+disksim.c:	 disksim->iotracefile = stdin;
+disksim.c:	 if ((disksim->iotracefile = fopen(filename,"rb")) == NULL) {
+disksim.c:      disksim->iotracefile = NULL;
+disksim.c:      strcpy (disksim->iotracefilename, filename);
+disksim.c:      disksim->checkpoint_disable = 1;
+disksim.c:    disksim->endian = _BIG_ENDIAN;
+disksim.c:    disksim->endian = _LITTLE_ENDIAN;
+disksim.c:    disksim->external_control = 1;
+disksim.c:    disksim->synthgen = 1;
+disksim.c:    disksim->iotrace = 0;
+disksim.c:	  disksim->synthgen); 
+disksim.c:  disksim->overrides = argv + 6;
+disksim.c:  disksim->overrides_len = argc - 6;
+disksim.c:  disksim->tracepipes[0] = 8; 
+disksim.c:  disksim->tracepipes[1] = 9; 
+disksim.c: /*   disksim->tracepipes[0] = dup(8); */
+disksim.c:/*    disksim->tracepipes[1] = dup(9); */
+disksim.c:/*      disksim->trace_mode = DISKSIM_MASTER; */
+disksim.c:/*      close(disksim->tracepipes[0]); */
+disksim.c:/*      disksim->trace_mode = DISKSIM_SLAVE; */
+disksim.c:/*      close(disksim->tracepipes[1]); */
+disksim.c:    disksim->trace_mode = DISKSIM_NONE;
+disksim.c:  if(disksim_loadparams(argv[1], disksim->synthgen)) {
+disksim.c:  if(!disksim->iosim_info) {
+disksim.c:   disksim_setup_outputfile (disksim->outputfilename, "r+");
+disksim.c:      ret = fsetpos (outputfile, &disksim->outputfileposition);
+disksim.c:   disksim_setup_iotracefile (disksim->iotracefilename);
+disksim.c:   if (disksim->iotracefile != NULL) {
+disksim.c:      ret = fsetpos (disksim->iotracefile, &disksim->iotracefileposition);
+disksim.c:   if ((strcmp(disksim->outiosfilename, "0") != 0) && (strcmp(disksim->outiosfilename, "null") != 0)) {
+disksim.c:      if ((outios = fopen(disksim->outiosfilename, "r+")) == NULL) {
+disksim.c:         fprintf(stderr, "Outios %s cannot be opened for write access\n", disksim->outiosfilename);
+disksim.c:      ret = fsetpos (outios, &disksim->outiosfileposition);
+disksim.c:  while (disksim->stop_sim == FALSE) {
+disksim.c:  if (disksim->iotracefile) {
+disksim.c:    fclose(disksim->iotracefile);
+disksim.c:   disksim->startaddr = addr;
+disksim.c:   disksim->totallength = len;
+disksim.c:   disksim->curroffset = sizeof(disksim_t);
+disksim.c:   disksim->closedthinktime = 0.0;
+disksim.c:   warmuptime = 0.0;	/* gets remapped to disksim->warmuptime */
+disksim.c:   simtime = 0.0;	/* gets remapped to disksim->warmuptime */
+disksim.c:   disksim->lastphystime = 0.0;
+disksim.c:   disksim->checkpoint_interval = 0.0;
+disksim_cachedev.c:   // fprintf (outputfile, "totalreqs = %d\n", disksim->totalreqs);
+disksim_cachedev.c:   disksim->donefunc_cachedev_empty = cachedev_empty_donefunc;
+disksim_cachedev.c:   disksim->idlework_cachedev = cachedev_idlework_callback;
+disksim_cachedev.c:   disksim->timerfunc_cachedev = cachedev_periodic_callback;
+disksim_cachedev.c:      ioqueue_set_idlework_function (queue, &disksim->idlework_cachedev, cache, cache->flush_idledelay);
+disksim_cachemem.c:   flushdesc->donefunc = &disksim->donefunc_cachemem_empty;
+disksim_cachemem.c:   // fprintf (outputfile, "totalreqs = %d\n", disksim->totalreqs);
+disksim_cachemem.c:         writedesc->donefunc = &disksim->donefunc_cachemem_empty;
+disksim_cachemem.c:   disksim->donefunc_cachemem_empty = cache_empty_donefunc;
+disksim_cachemem.c:   disksim->idlework_cachemem = cache_idletime_detected;
+disksim_cachemem.c:   disksim->concatok_cachemem = cache_concatok;
+disksim_cachemem.c:   disksim->timerfunc_cachemem = cache_periodic_flush;
+disksim_cachemem.c:      timereq->func = &disksim->timerfunc_cachemem;
+disksim_cachemem.c:	 ioqueue_set_idlework_function(queue, &disksim->idlework_cachemem, cache, cache->flush_idledelay);
+disksim_cachemem.c:	 ioqueue_set_concatok_function(queue, &disksim->concatok_cachemem, cache);
+disksim_controller.c:   ctlrinfo_t *ctlrinfo = disksim->ctlrinfo;
+disksim_controller.c:  for(c = 0; c < disksim->ctlrinfo->numcontrollers; c++) {
+disksim_controller.c:    if(!strcmp(name, disksim->ctlrinfo->controllers[c]->name)) {
+disksim_controller.c:      return disksim->ctlrinfo->controllers[c];
+disksim_controller.c:  if(disksim->ctlrinfo == NULL) {
+disksim_controller.c:    disksim->ctlrinfo = malloc(sizeof(ctlrinfo_t));
+disksim_controller.c:    if(!disksim->ctlrinfo) return 0;
+disksim_controller.c:    bzero((char *)disksim->ctlrinfo, sizeof(ctlrinfo_t));
+disksim_controller.c:  ctlrinfo = disksim->ctlrinfo;
+disksim_controller.c:  if (disksim->ctlrinfo == NULL) {
+disksim_controller.c:    disksim->ctlrinfo = DISKSIM_malloc (sizeof(ctlrinfo_t));
+disksim_controller.c:    bzero ((char *)disksim->ctlrinfo, sizeof(ctlrinfo_t));
+disksim_controller.c:  for(c = 0; c < disksim->ctlrinfo->ctlrs_len; c++) {
+disksim_controller.c:    if(!disksim->ctlrinfo->controllers[c]) { goto foundslot; } 
+disksim_controller.c:    disksim->ctlrinfo->controllers = realloc(disksim->ctlrinfo->controllers,
+disksim_controller.c:    bzero(disksim->ctlrinfo->controllers + zerooff, zerolen);
+disksim_controller.c:    disksim->ctlrinfo->ctlrs_len = newlen;
+disksim_controller.c:  disksim->ctlrinfo->numcontrollers++;
+disksim_controller.c:  disksim->ctlrinfo->controllers[c] = result;
+disksim_controller.c:/*     ctlrinfo_t *ctlrinfo = disksim->ctlrinfo; */
+disksim_controller.c:   ctlrinfo_t *ctlrinfo = disksim->ctlrinfo;
+disksim_controller.c:   ctlrinfo_t *ctlrinfo = disksim->ctlrinfo;
+disksim_controller.c:   ctlrinfo_t *ctlrinfo = disksim->ctlrinfo;
+disksim_controller.c:   ctlrinfo_t *ctlrinfo = disksim->ctlrinfo;
+disksim_controller.c:   ctlrinfo_t *ctlrinfo = disksim->ctlrinfo;
+disksim_ctlrsmart.c:      cache_free_block_dirty(currctlr->cache, curr, &disksim->donefunc_ctlrsmart_write, currctlr);
+disksim_ctlrsmart.c:   cache_get_block(currctlr->cache, curr, &disksim->donefunc_ctlrsmart_read, currctlr);
+disksim_ctlrsmart.c:   disksim->issuefunc_ctlrsmart = controller_smart_issue_access;
+disksim_ctlrsmart.c:   disksim->queuefind_ctlrsmart = controller_smart_queuefind;
+disksim_ctlrsmart.c:   disksim->wakeupfunc_ctlrsmart = controller_smart_wakeup;
+disksim_ctlrsmart.c:   disksim->donefunc_ctlrsmart_read = controller_smart_host_data_transfer;
+disksim_ctlrsmart.c:   disksim->donefunc_ctlrsmart_write = controller_smart_request_complete;
+disksim_ctlrsmart.c:   cache_initialize(currctlr->cache, &disksim->issuefunc_ctlrsmart, currctlr, &disksim->queuefind_ctlrsmart, currctlr, &disksim->wakeupfunc_ctlrsmart, currctlr, numdevs);
+disksim_ctlrsmart.c:   ctlrinfo_t *ctlrinfo = disksim->ctlrinfo;
+disksim_device.c:#define numdevices                  (disksim->deviceinfo->numdevices)
+disksim_device.c:#define devicetypes                 (disksim->deviceinfo->devicetypes)
+disksim_device.c:#define devicenos                   (disksim->deviceinfo->devicenos)
+disksim_device.c:#define maxdeviceno                 (disksim->deviceinfo->maxdeviceno)
+disksim_device.c:  for(c = 0; c < disksim->deviceinfo->devs_len; c++) {
+disksim_device.c:    if(!disksim->deviceinfo->devicenames[c]) continue;
+disksim_device.c:    if(!strcmp(name, disksim->deviceinfo->devicenames[c])) {
+disksim_device.c:   if (disksim->deviceinfo == NULL) {
+disksim_device.c:      disksim->deviceinfo = malloc (sizeof(device_info_t));
+disksim_device.c:      bzero ((char *)disksim->deviceinfo, sizeof(device_info_t));
+disksim_device.c:  for(c = 0; c < disksim->deviceinfo->devs_len; c++) {
+disksim_device.c:    if(!disksim->deviceinfo->devicenames[c]) {
+disksim_device.c:  disksim->deviceinfo->devicenames = 
+disksim_device.c:    realloc(disksim->deviceinfo->devicenames, newlen * sizeof(char *));
+disksim_device.c:  bzero(disksim->deviceinfo->devicenames + c, zerocnt * sizeof(char *));
+disksim_device.c:  disksim->deviceinfo->devices = realloc(disksim->deviceinfo->devices, 
+disksim_device.c:  bzero(disksim->deviceinfo->devices + c, zerocnt * sizeof(int));
+disksim_device.c:  disksim->deviceinfo->devs_len = newlen;
+disksim_device.c:  disksim->deviceinfo->devicenames[c] = d->device_name;
+disksim_device.c:  disksim->deviceinfo->devices[c] = d;
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->set_depth(devicenos[devno], inbusno, depth, slotno);
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->get_depth(devno);
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->get_inbus(devno);
+disksim_device.c:   return disksim->deviceinfo->devices[curr->devno]->get_busno(curr);
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->get_slotno(devno);
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->get_number_of_blocks(devno);
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->get_maxoutstanding(devno);
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->get_numcyls(devno);
+disksim_device.c:   return disksim->deviceinfo->devices[curr->devno]->get_blktranstime(curr);
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->get_avg_sectpercyl(devno);
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->get_mapping(maptype, 
+disksim_device.c:   return disksim->deviceinfo->devices[curr->devno]->event_arrive(curr);
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->get_distance(devno,
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->get_servtime(devno,
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->get_seektime(devno,
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->get_acctime(devno,
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->bus_delay_complete(devno,
+disksim_device.c:   return disksim->deviceinfo->devices[devno]->bus_ownership_grant(devno,
+disksim_disk.c:   currdisk = disksim->diskinfo->disks[diskno];
+disksim_disk.c:  if(!disksim->diskinfo) disk_initialize_diskinfo();
+disksim_disk.c:  for(c = 0; c < disksim->diskinfo->disks_len; c++) {
+disksim_disk.c:    if(!disksim->diskinfo->disks[c]) {
+disksim_disk.c:      disksim->diskinfo->disks[c] = d;
+disksim_disk.c:  disksim->diskinfo->disks = realloc(disksim->diskinfo->disks, 
+disksim_disk.c:  bzero(disksim->diskinfo->disks + numdisks, numdisks);
+disksim_disk.c:  disksim->diskinfo->disks[c] = d;
+disksim_disk.c:  disksim->diskinfo->disks_len *= 2;
+disksim_disk.c:  disksim->enablement_disk = disk_enablement_function;
+disksim_disk.c:  disksim->diskinfo = malloc (sizeof(disk_info_t));
+disksim_disk.c:  bzero ((char *)disksim->diskinfo, sizeof(disk_info_t));
+disksim_disk.c:  disksim->diskinfo->disks = (struct disk**) malloc(MAXDEVICES * sizeof(disk));
+disksim_disk.c:  disksim->diskinfo->disks_len = MAXDEVICES;
+disksim_disk.c:  bzero ((char *)disksim->diskinfo->disks, (MAXDEVICES * sizeof(disk)));
+disksim_disk.c:  if(!disksim->diskinfo) disk_initialize_diskinfo();
+disksim_disk.c:   if (disksim->diskinfo == NULL) {
+disksim_disk.c:     ioqueue_set_enablement_function (currdisk->queue, &disksim->enablement_disk);
+disksim_disk.c:  return disksim->diskinfo->disks[n]->model->dm_sectors;
+disksim_disk.c:  return disksim->diskinfo->disks[n]->model->dm_cyls;
+disksim_disk.c:  struct dm_disk_if *d = disksim->diskinfo->disks[n]->model;
+disksim_disk.c:  return disksim->diskinfo->disks[devno]->sectpercyl;
+disksim_diskctlr.c:      // ewww ... this assertion fails in disksim-2 ... so reading the last+1
+disksim_interface.c:   if ((disksim->intq) && (disksim->intq->time < curtime) && ((disksim->intq->time + 0.0001) >= curtime)) {
+disksim_interface.c:      curtime = disksim->intq->time;
+disksim_interface.c:   if (((curtime + 0.0001) < simtime) || ((disksim->intq) && (disksim->intq->time < curtime))) {
+disksim_interface.c:      fprintf (stderr, "external time is mismatched with disksim time: %f vs. %f (%f)\n", curtime, simtime, ((disksim->intq) ? disksim->intq->time : 0.0));
+disksim_interface.c:   if (disksim->intq != NULL && (disksim->intq->time + 0.0001) < curtime) {
+disksim_interface.c:     fprintf (stderr, "external time is ahead of disksim time: %f > %f\n", curtime, disksim->intq->time);
+disksim_interface.c:   // fprintf(stderr, "disksim_internal_event: intq->time=%f curtime=%f\n", disksim->intq->time, curtime);
+disksim_interface.c:   if(disksim->intq != NULL){
+disksim_interface.c:     ASSERT (disksim->intq->time >= simtime);
+disksim_interface.c:   while ((disksim->intq != NULL) 
+disksim_interface.c:	  && (disksim->intq->time <= (curtime + 0.0001))) 
+disksim_interface.c:       // fprintf (stderr, "handling internal event: type %d\n", disksim->intq->type);
+disksim_interface.c:   if (disksim->intq != NULL) {
+disksim_interface.c:      syssim_schedule_callback (disksim_interface_internal_event, MS_TO_SYSSIMTIME(disksim->intq->time));
+disksim_interface.c:   if (disksim->intq) {
+disksim_interface.c:   while ((disksim->intq != NULL) 
+disksim_interface.c:	  && (disksim->intq->time <= (curtime + 0.0001))) 
+disksim_interface.c:   if (disksim->intq) {
+disksim_interface.c:      syssim_schedule_callback (disksim_interface_internal_event, MS_TO_SYSSIMTIME(disksim->intq->time));
+disksim_intr.c:   if (disksim->synthgen) {
+disksim_iodriver.c:  if(!disksim->iodriver_info) return 0;
+disksim_iodriver.c:   if (disksim->traceformat == VALIDATE) {
+disksim_iodriver.c:      tmp = iotrace_validate_get_ioreq_event(disksim->iotracefile, tmp);
+disksim_iodriver.c:   } else if (disksim->closedios) {
+disksim_iodriver.c:      tmp = (ioreq_event *) io_get_next_external_event(disksim->iotracefile);
+disksim_iodriver.c:         tmp->time = simtime + disksim->closedthinktime;
+disksim_iodriver.c:   if (disksim->totalreqs <= disksim->warmup_iocnt) {
+disksim_iodriver.c:   disksim->totalreqs++;
+disksim_iodriver.c:   if ((disksim->checkpoint_iocnt > 0) && ((disksim->totalreqs % disksim->checkpoint_iocnt) == 0)) {
+disksim_iodriver.c:   if (disksim->totalreqs == disksim->warmup_iocnt) {
+disksim_iodriver.c:  if (disksim->iodriver_info == NULL) {
+disksim_iodriver.c:    disksim->iodriver_info = DISKSIM_malloc (sizeof(iodriver_info_t));
+disksim_iodriver.c:    bzero ((char *)disksim->iodriver_info, sizeof(iodriver_info_t));
+disksim_iodriver.c:  for(c = 0; c < disksim->iodriver_info->iodrivers_len; c++) {
+disksim_iodriver.c:  disksim->iodriver_info->iodrivers_len = newlen;
+disksim_iodriver.c:  if (disksim->iodriver_info == NULL) {
+disksim_iodriver.c:    disksim->iodriver_info = malloc (sizeof(iodriver_info_t));
+disksim_iodriver.c:    bzero ((char *)disksim->iodriver_info, sizeof(iodriver_info_t));
+disksim_iodriver.c:    if(disksim->verbosity > 0) 
+disksim_iodriver.c:  newlen = disksim->iodriver_info->sysorgs_len ? 
+disksim_iodriver.c:    disksim->iodriver_info->sysorgs_len * 2 : 2;
+disksim_iodriver.c:  for(c = 0; c < disksim->iodriver_info->sysorgs_len; c++) {
+disksim_iodriver.c:  disksim->iodriver_info->sysorgs_len = newlen;
+disksim_ioqueue.c:      idledetect->func = &disksim->timerfunc_ioqueue;
+disksim_ioqueue.c:      disksim->lastphystime = simtime - tmp->starttime;
+disksim_ioqueue.c:         disksim->lastphystime = simtime - tmp->starttime;
+disksim_ioqueue.c:   // fprintf (outputfile, "Exiting ioqueue_physical_access_done: %f\n", disksim->lastphystime);
+disksim_ioqueue.c:   disksim->timerfunc_ioqueue = ioqueue_idledetected;
+disksim_iosim.c:#define io_extq                  (disksim->iosim_info->io_extq)
+disksim_iosim.c:#define io_extqlen               (disksim->iosim_info->io_extqlen)
+disksim_iosim.c:#define io_extq_type             (disksim->iosim_info->io_extq_type)
+disksim_iosim.c:#define ioscale                  (disksim->iosim_info->ioscale)
+disksim_iosim.c:#define last_request_arrive      (disksim->iosim_info->last_request_arrive)
+disksim_iosim.c:#define constintarrtime          (disksim->iosim_info->constintarrtime)
+disksim_iosim.c:#define validatebuf              (disksim->iosim_info->validatebuf)
+disksim_iosim.c:#define tracemappings            (disksim->iosim_info->tracemappings)
+disksim_iosim.c:#define tracemap                 (disksim->iosim_info->tracemap)
+disksim_iosim.c:#define tracemap1                (disksim->iosim_info->tracemap1)
+disksim_iosim.c:#define tracemap2                (disksim->iosim_info->tracemap2)
+disksim_iosim.c:#define tracemap3                (disksim->iosim_info->tracemap3)
+disksim_iosim.c:#define tracemap4                (disksim->iosim_info->tracemap4)
+disksim_iosim.c:#define tracestats               (disksim->iosim_info->tracestats)
+disksim_iosim.c:#define tracestats1              (disksim->iosim_info->tracestats1)
+disksim_iosim.c:#define tracestats2              (disksim->iosim_info->tracestats2)
+disksim_iosim.c:#define tracestats3              (disksim->iosim_info->tracestats3)
+disksim_iosim.c:#define tracestats4              (disksim->iosim_info->tracestats4)
+disksim_iosim.c:#define tracestats5              (disksim->iosim_info->tracestats5)
+disksim_iosim.c:   disksim->iosim_info = DISKSIM_malloc (sizeof(iosim_info_t));
+disksim_iosim.c:   bzero ((char *)disksim->iosim_info, sizeof(iosim_info_t));
+disksim_iosim.c:  if(!disksim->iosim_info) 
+disksim_iosim.c:      stat_update(tracestats3, (validate_lastserv - disksim->lastphystime));
+disksim_iosim.c:         stat_update(tracestats5, (validate_lastserv - disksim->lastphystime));
+disksim_iosim.c:   switch (disksim->traceformat) {
+disksim_iosim.c:   temp = iotrace_get_ioreq_event(iotracefile, disksim->traceformat, temp);
+disksim_iosim.c:      switch (disksim->traceformat) {
+disksim_iosim.c:      if ((temp->time < simtime) && (!disksim->closedios)) {
+disksim_iosim.c:   if (disksim->iosim_info == NULL) {
+disksim_iotrace.c:   disksim->iotrace_info = DISKSIM_malloc (sizeof(iotrace_info_t));
+disksim_iotrace.c:   bzero ((char *)disksim->iotrace_info, sizeof(iotrace_info_t));
+disksim_iotrace.c:   if (disksim->iotrace_info == NULL) {
+disksim_iotrace.c:   disksim->traceendian = _LITTLE_ENDIAN;
+disksim_iotrace.c:   disksim->traceheader = TRUE;
+disksim_iotrace.c:      disksim->traceformat = DEFAULT;
+disksim_iotrace.c:      disksim->traceformat = ASCII;
+disksim_iotrace.c:      disksim->traceformat = RAW;
+disksim_iotrace.c:      disksim->traceformat = VALIDATE;
+disksim_iotrace.c:      disksim->traceformat = HPL;
+disksim_iotrace.c:      disksim->traceendian = _BIG_ENDIAN;
+disksim_iotrace.c:      disksim->traceformat = HPL;
+disksim_iotrace.c:      disksim->traceendian = _BIG_ENDIAN;
+disksim_iotrace.c:      disksim->traceheader = FALSE;
+disksim_iotrace.c:      disksim->traceformat = DEC;
+disksim_iotrace.c:      disksim->traceformat = EMCSYMM;
+disksim_iotrace.c:   if (disksim->endian != disksim->traceendian) {
+disksim_iotrace.c:   if (disksim->endian != disksim->traceendian) {
+disksim_iotrace.c:      if ((disksim->traceheader == FALSE) && (new->time == 0.0)) {
+disksim_iotrace.c:   if (disksim->traceheader == FALSE) {
+disksim_iotrace.c:   if (disksim->iotrace_info == NULL) {
+disksim_loadparams.c:  disksim->parfile = fopen(inputfile,"r");
+disksim_loadparams.c:  ddbg_assert2(disksim->parfile != NULL, 
+disksim_loadparams.c:  rv = lp_loadfile(disksim->parfile, 
+disksim_loadparams.c:		   disksim->overrides,
+disksim_loadparams.c:		   disksim->overrides_len);
+disksim_logorg.c:      fprintf(stderr,"Stopping simulation because of saturation: simtime %f, totalreqs %d\n", simtime, disksim->totalreqs);
+disksim_logorg.c:      fprintf (outputfile, "Stopping simulation because of saturation: simtime %f, totalreqs %d\n", simtime, disksim->totalreqs);
+disksim_logorg.c:  if (disksim->totalreqs > disksim->warmup_iocnt) {
+disksim_logorg.c:  //if(curr->time > 5327493) disksim->stop_sim = TRUE;
+disksim_malloc.c:/*     addr = disksim->startaddr + disksim->curroffset; */
+disksim_malloc.c:/*     if ((disksim->totallength - disksim->curroffset) >= size) { */
+disksim_malloc.c:/*        disksim->curroffset += rounduptomult(size,8); */
+disksim_malloc.c:/*       fprintf (stderr, "*** error: DISKSIM_malloc(): allocated space for disksim run has run out (%d)\n", disksim->totallength); */
+disksim_pfsim.c:   if(disksim->external_control){
+disksim_pfsim.c:     disksim->external_io_done_notify (curr);
+disksim_pfsim.c:  if(!disksim->pf_info) {
+disksim_pfsim.c:    disksim->pf_info = pf_info;
+disksim_pfsim.c:  if(!disksim->pf_info) {
+disksim_pfsim.c:    disksim->pf_info = pf_info;
+disksim_rand48.c:#define _rand48_seed   (disksim->rand48_info->_rand48_seed)
+disksim_rand48.c:#define _rand48_mult   (disksim->rand48_info->_rand48_mult)
+disksim_rand48.c:#define _rand48_add    (disksim->rand48_info->_rand48_add)
+disksim_rand48.c:   if (disksim->rand48_info != NULL) {
+disksim_rand48.c:   disksim->rand48_info = DISKSIM_malloc (sizeof(rand48_into_t));
+disksim_rand48.c:   bzero ((char *)disksim->rand48_info, sizeof(rand48_into_t));
+disksim_simos_interface.c:   if ((disksim->intq) && (disksim->intq->time < curtime) && ((disksim->intq->time + DISKSIM_TIME_THRESHOLD) >= curtime)) {
+disksim_simos_interface.c:      curtime = disksim->intq->time;
+disksim_simos_interface.c:   if (((curtime + DISKSIM_TIME_THRESHOLD) < simtime) || ((disksim->intq) && (disksim->intq->time < curtime))) {
+disksim_simos_interface.c:      fprintf (stderr, "external time is mismatched with disksim time: %f vs. %f (%f)\n", curtime, simtime, ((disksim->intq) ? disksim->intq->time : 0.0));
+disksim_simos_interface.c:  if ((disksim->intq == NULL) || ((disksim->intq->time + DISKSIM_TIME_THRESHOLD) < curtime)) {
+disksim_simos_interface.c:    fprintf (stderr, "external time is ahead of disksim time: %f > %f\n", curtime, ((disksim->intq) ? disksim->intq->time : 0.0));
+disksim_simos_interface.c:  DEBUG_TRACE(("disksim_interface_internal_event:: disksim->intq->time=%f curtime=%f, diff = %f\n",
+disksim_simos_interface.c:	       disksim->intq->time, curtime, curtime - disksim->intq->time));
+disksim_simos_interface.c:  DEBUG_TRACE(("disksim_interface_internal_event:: disksim->intq->time=%d curtime=%d, diff = %d\n",
+disksim_simos_interface.c:	       MSECtoTICS(disksim->intq->time), systime, curtime - MSECtoTICS(disksim->intq->time)));
+disksim_simos_interface.c:  ASSERT (disksim->intq->time >= simtime);
+disksim_simos_interface.c:  while ((disksim->intq != NULL) && (disksim->intq->time <= (curtime + DISKSIM_TIME_THRESHOLD))) { 
+disksim_simos_interface.c:    DEBUG_TRACE(("disksim_interface_internal_event::  handling internal event: type %d\n", disksim->intq->type));    
+disksim_simos_interface.c:  if (disksim->intq != NULL) {
+disksim_simos_interface.c:		    (EventCallbackHdr *)cback, (void *)disksim, MSECtoTICS(disksim->intq->time) - systime);
+disksim_simos_interface.c:		 cback->num, MSECtoTICS(disksim->intq->time)));
+disksim_simos_interface.c:  if (disksim->intq) {
+disksim_simos_interface.c:  while ((disksim->intq != NULL) && (disksim->intq->time <= (curtime + DISKSIM_TIME_THRESHOLD))) {
+disksim_simos_interface.c:  if (disksim->intq) {
+disksim_simos_interface.c:		 InternalCallback->num, MSECtoTICS(disksim->intq->time)));
+disksim_simos_interface.c:		    (MSECtoTICS(disksim->intq->time) - systime));   
+disksim_simpledisk.c:#define numsimpledisks         (disksim->simplediskinfo->numsimpledisks)
+disksim_simpledisk.c://#define simpledisks            (disksim->simplediskinfo->simpledisks)
+disksim_simpledisk.c:   return (disksim->simplediskinfo->simpledisks[devno]);
+disksim_simpledisk.c:   disksim->simplediskinfo = malloc (sizeof(simplediskinfo_t));
+disksim_simpledisk.c:   bzero ((char *)disksim->simplediskinfo, sizeof(simplediskinfo_t));
+disksim_simpledisk.c:   disksim->simplediskinfo->simpledisks = malloc(MAXDEVICES * (sizeof(simpledisk_t)));
+disksim_simpledisk.c:   disksim->simplediskinfo->simpledisks_len = MAXDEVICES;
+disksim_simpledisk.c:   bzero ((char *)disksim->simplediskinfo->simpledisks, (MAXDEVICES * (sizeof(simpledisk_t))));
+disksim_simpledisk.c:   if (disksim->simplediskinfo == NULL) {
+disksim_simpledisk.c:  if(!disksim->simplediskinfo) simpledisk_initialize_diskinfo();
+disksim_simpledisk.c:  for(c = 0; c < disksim->simplediskinfo->simpledisks_len; c++) {
+disksim_simpledisk.c:    if(!disksim->simplediskinfo->simpledisks[c]) {
+disksim_simpledisk.c:      disksim->simplediskinfo->simpledisks[c] = d;
+disksim_simpledisk.c:  disksim->simplediskinfo->simpledisks = 
+disksim_simpledisk.c:    realloc(disksim->simplediskinfo->simpledisks, 
+disksim_simpledisk.c:  bzero(disksim->simplediskinfo->simpledisks + numsimpledisks, 
+disksim_simpledisk.c:  disksim->simplediskinfo->simpledisks[c] = d;
+disksim_simpledisk.c:  disksim->simplediskinfo->simpledisks_len *= 2;
+disksim_simpledisk.c:  if(!disksim->simplediskinfo) simpledisk_initialize_diskinfo();
+disksim_simpleflash.c:#define numsimpleflashs         (disksim->simpleflashinfo->numsimpleflashs)
+disksim_simpleflash.c://#define simpleflashs            (disksim->simpleflashinfo->simpleflashs)
+disksim_simpleflash.c:   return (disksim->simpleflashinfo->simpleflashs[0]);//[devno]); //hack by Kanishk : this restricts the number of flash devices in the system to 1 but allows a flash device to be coupled with a different kind of device, thus allowing a hetrogeneous topology 
+disksim_simpleflash.c:   disksim->simpleflashinfo = malloc (sizeof(simpleflashinfo_t));
+disksim_simpleflash.c:   bzero ((char *)disksim->simpleflashinfo, sizeof(simpleflashinfo_t));
+disksim_simpleflash.c:   disksim->simpleflashinfo->simpleflashs = malloc(MAXDEVICES * (sizeof(simpleflash_t)));
+disksim_simpleflash.c:   disksim->simpleflashinfo->simpleflashs_len = MAXDEVICES;
+disksim_simpleflash.c:   bzero ((char *)disksim->simpleflashinfo->simpleflashs, (MAXDEVICES * (sizeof(simpleflash_t))));
+disksim_simpleflash.c:   if (disksim->simpleflashinfo == NULL) {
+disksim_simpleflash.c:  if(!disksim->simpleflashinfo) simpleflash_initialize_diskinfo();
+disksim_simpleflash.c:  for(c = 0; c < disksim->simpleflashinfo->simpleflashs_len; c++) {
+disksim_simpleflash.c:    if(!disksim->simpleflashinfo->simpleflashs[c]) {
+disksim_simpleflash.c:      disksim->simpleflashinfo->simpleflashs[c] = d;
+disksim_simpleflash.c:  disksim->simpleflashinfo->simpleflashs = 
+disksim_simpleflash.c:    realloc(disksim->simpleflashinfo->simpleflashs, 
+disksim_simpleflash.c:  bzero(disksim->simpleflashinfo->simpleflashs + numsimpleflashs, 
+disksim_simpleflash.c:  disksim->simpleflashinfo->simpleflashs[c] = d;
+disksim_simpleflash.c:  disksim->simpleflashinfo->simpleflashs_len *= 2;
+disksim_simpleflash.c:  if(!disksim->simpleflashinfo) simpleflash_initialize_diskinfo();
+disksim_synthio.c:#define synthio_gens            (disksim->synthio_info->synthio_gens)
+disksim_synthio.c:#define synthio_gencnt          (disksim->synthio_info->synthio_gencnt)
+disksim_synthio.c:#define synthio_iocnt           (disksim->synthio_info->synthio_iocnt)
+disksim_synthio.c:#define synthio_endiocnt        (disksim->synthio_info->synthio_endiocnt)
+disksim_synthio.c:#define synthio_endtime         (disksim->synthio_info->synthio_endtime)
+disksim_synthio.c:#define synthio_syscalls        (disksim->synthio_info->synthio_syscalls)
+disksim_synthio.c:#define synthio_syscall_time    (disksim->synthio_info->synthio_syscall_time)
+disksim_synthio.c:#define synthio_sysret_time     (disksim->synthio_info->synthio_sysret_time)
+disksim_synthio.c:					       disksim->traceformat, 
+disksim_synthio.c:  if(!disksim->synthio_info) {
+disksim_synthio.c:    disksim->synthio_info = DISKSIM_malloc (sizeof(synthio_info_t));
+disksim_synthio.c:    bzero ((char *)disksim->synthio_info, sizeof(synthio_info_t));
+disksim_synthio.c:  disksim->synthio_info->synthio_gens_len = l->values_len;
+nand.c:        //disksim->stop_sim == TRUE;
+nand.c:    //disksim->stop_sim == TRUE;
+ssd_interface.c:    //disksim->stop_sim = TRUE;
+ssd_interface.c:      disksim->stop_sim == TRUE;
+ssd_interface.c:          //  disksim->stop_sim = TRUE;
+syssim_driver2.c:#define numiodrivers            (disksim->iodriver_info->numiodrivers)
+syssim_driver2.c:#define iodrivers               (disksim->iodriver_info->iodrivers)
+syssim_driver2.c:    if(disksim->intq == NULL && r == NULL){
+syssim_driver2.c:    }else if(r != NULL && disksim->intq == NULL && req_count != MAX_REQ){

@@ -1,0 +1,223 @@
+#!gmake
+
+# This is the makefile that is used when building for SimOS.  Alas, it has
+# to be kept in sync with the main Makefile manually.  So, if you're planning
+# on keeping it running with SimOS, make sure any new files that are added to
+# the main Makefile are added here.
+
+ifndef SIMTOOLS
+SIMTOOLS = ../../../..
+endif
+
+include $(SIMTOOLS)/makedefs
+
+VPATH = ..
+
+TARGET = disklib.a
+
+SIM_ARCH = ALPHA
+
+INCS = -I. -I$(SIMTOOLS)/devices/controllers -I$(SIMTOOLS)/cpus/shared $(GLOBAL_INCS)
+
+DEFS =  $(GLOBAL_DEFS) #-DDEBUG -DDISKSIM_DEBUG
+
+LDFLAGS = -lm
+HP_FAST_OFLAGS = +O4
+NCR_FAST_OFLAGS = -O4 -Hoff=BEHAVED
+DEBUG_OFLAGS = -g #-DASSERTS -DDEBUG=1
+PROF_OFLAGS = -g -p #-DASSERTS
+GPROF_OFLAGS = -g -G #-DASSERTS
+CFLAGS = $(DEBUG_OFLAGS) $(GLOBAL_CFLAGS) $(DEFS) $(INCS)
+
+#CC = cc
+CC = gcc -Wall
+
+
+DISKSIM_OBJ = disksim.o disksim_intr.o disksim_pfsim.o \
+	disksim_pfdisp.o disksim_synthio.o disksim_iotrace.o disksim_iosim.o \
+	disksim_logorg.o disksim_redun.o disksim_ioqueue.o disksim_iodriver.o \
+	disksim_bus.o disksim_controller.o disksim_ctlrdumb.o \
+	disksim_ctlrsmart.o disksim_disk.o disksim_diskctlr.o \
+	disksim_diskcache.o disksim_diskmap.o disksim_diskmech.o \
+	disksim_stat.o disksim_rand48.o disksim_malloc.o disksim_device.o \
+	disksim_cache.o disksim_cachemem.o disksim_cachedev.o \
+	disksim_simpledisk.o \
+	disksim_simpleflash.o \
+	memsdevice_disksim.o memsdevice_event.o memsdevice_mapping.o memsdevice_cache.o\
+	disksim_simos_interface.o
+
+#DISKSIM_OBJ = disksim.o disksim_intr.o disksim_cache.o disksim_pfsim.o disksim_pfdisp.o\
+#	disksim_synthio.o disksim_iotrace.o disksim_iosim.o disksim_logorg.o\
+#	disksim_redun.o disksim_ioqueue.o disksim_iodriver.o disksim_bus.o\
+#	disksim_controller.o disksim_ctlrdumb.o disksim_ctlrsmart.o\
+#	disksim_disk.o disksim_diskctlr.o disksim_diskcache.o disksim_diskmap.o\
+#	disksim_diskmech.o disksim_stat.o disksim_rand48.o disksim_malloc.o\
+#	disksim_device.o disksim_simpledisk.o disksim_simos_interface.o \
+#	memsdevice_disksim.o memsdevice_event.o \
+#	memsdevice_mapping.o
+
+#memsdevice_scheduler.o
+#memsdevice_cache.o 
+#disksim_main.o
+
+.PHONY: warn deps
+
+default: warn
+	@$(MAKE) -f ../Makefile.ALL deps
+	@$(MAKE) -f ../Makefile.ALL INCLUDE_DEPS=1  $(TARGET)
+
+$(TARGET): $(DISKSIM_OBJ)
+	@echo "Updating $(TARGET)"
+	$(AR) cru $(TARGET) $(DISKSIM_OBJ)
+
+warn:
+	@echo ""
+	@echo "Making devices/disk"
+	@echo "*******************"
+	@echo "  DEFS :   `$(FORMAT) $(DEFS)`"
+	@echo "  CFLAGS : `$(FORMAT) $(CFLAGS)`"
+	@echo ""	
+
+#all : disksim rms hplcomb syssim
+
+clean :
+	rm -f TAGS *~ *.o disksim syssim rms hplcomb core
+
+#rms : rms.c
+#	$(CC) rms.c -lm -o rms
+
+#hplcomb : hplcomb.c
+#	$(CC) hplcomb.c -o hplcomb
+
+#disksim : disksim.o $(DISKSIM_OBJ)
+#	$(CC) $(CFLAGS) -o disksim disksim.o $(DISKSIM_OBJ) $(LDFLAGS)
+
+#syssim : syssim_driver.o disksim_main.o disksim_interface.o $(DISKSIM_OBJ)
+#	$(CC) $(CFLAGS) -o syssim syssim_driver.o disksim_main.o disksim_interface.o $(DISKSIM_OBJ) $(LDFLAGS)
+
+disksim_rand48.o : disksim_rand48.c disksim_rand48.h
+	$(CC) -c $(CFLAGS) ../disksim_rand48.c
+
+disksim_malloc.o : disksim_malloc.c disksim_malloc.h
+	@echo "***  Making disksim_malloc.o  ***"
+	$(CC) -c $(CFLAGS) ../disksim_malloc.c
+
+disksim_stat.o : disksim_stat.c disksim_stat.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_stat.c
+
+disksim_diskmech.o : disksim_diskmech.c disksim_disk.h disksim_diskmap.h disksim_stat.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_diskmech.c
+
+disksim_diskmap.o : disksim_diskmap.c disksim_disk.h disksim_diskmap.h disksim_stat.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_diskmap.c
+
+disksim_diskcache.o : disksim_diskcache.c disksim_disk.h disksim_diskmap.h disksim_stat.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_diskcache.c
+
+disksim_diskctlr.o : disksim_diskctlr.c disksim_disk.h disksim_diskmap.h disksim_stat.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_diskctlr.c
+
+disksim_disk.o : disksim_disk.c disksim_disk.h disksim_diskmap.h disksim_stat.h disksim_ioqueue.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_disk.c
+
+disksim_simpledisk.o : disksim_simpledisk.c disksim_simpledisk.h disksim_stat.h disksim_ioqueue.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_simpledisk.c
+
+disksim_simpleflash.o : disksim_simpleflash.c disksim_simpleflash.h disksim_stat.h disksim_ioqueue.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_simpleflash.c
+
+disksim_memsdevice.o : disksim_memsdevice.c disksim_memsdevice.h disksim_stat.h disksim_ioqueue.h disksim_iosim.h disksim_global.h disksim_bus.h
+	$(CC) -c $(CFLAGS) ../disksim_memsdevice.c
+
+disksim_device.o : disksim_device.c disksim_device.h disksim_disk.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_device.c
+
+disksim_ctlrsmart.o : disksim_ctlrsmart.c disksim_controller.h disksim_cache.h disksim_ioqueue.h disksim_orgface.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_ctlrsmart.c
+
+disksim_ctlrdumb.o : disksim_ctlrdumb.c disksim_controller.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_ctlrdumb.c
+
+disksim_controller.o : disksim_controller.c disksim_controller.h disksim_orgface.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_controller.c
+
+disksim_bus.o : disksim_bus.c disksim_bus.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_bus.c
+
+disksim_iodriver.o : disksim_iodriver.c disksim_iodriver.h disksim_ioqueue.h disksim_orgface.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_iodriver.c
+
+disksim_redun.o : disksim_redun.c disksim_logorg.h disksim_orgface.h disksim_iosim.h disksim_stat.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_redun.c
+
+disksim_logorg.o : disksim_logorg.c disksim_logorg.h disksim_orgface.h disksim_iosim.h disksim_stat.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_logorg.c
+
+disksim_ioqueue.o : disksim_ioqueue.c disksim_ioqueue.h disksim_iosim.h disksim_stat.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_ioqueue.c
+
+disksim_iosim.o : disksim_iosim.c disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_iosim.c
+
+disksim_iotrace.o : disksim_iotrace.c disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_iotrace.c
+
+disksim_synthio.o : disksim_synthio.c disksim_pfsim.h disksim_synthio.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_synthio.c
+
+disksim_pfdisp.o : disksim_pfdisp.c disksim_pfsim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_pfdisp.c
+
+disksim_pfsim.o : disksim_pfsim.c disksim_ioface.h disksim_pfsim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_pfsim.c
+
+disksim_cache.o : disksim_cache.c disksim_cache.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_cache.c
+
+disksim_cachemem.o : disksim_cachemem.c disksim_cachemem.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_cachemem.c
+
+disksim_cachedev.o : disksim_cachedev.c disksim_cachedev.h disksim_iosim.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_cachedev.c
+
+disksim_intr.o : disksim_intr.c disksim_ioface.h disksim_pfface.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim_intr.c
+
+disksim.o : disksim.c disksim_ioface.h disksim_pfface.h disksim_global.h
+	$(CC) -c $(CFLAGS) ../disksim.c
+
+disksim_main.o : disksim_main.c disksim_ioface.h disksim_pfface.h disksim_global.h
+	@echo "***  Making disksim_main.o  ***"
+	$(CC) -c -o disksim_main.o $(CFLAGS) -DEXTERNAL_MAIN ../disksim_main.c
+
+disksim_simos_interface.o: disksim_simos_interface.c disksim_global.h disksim_ioface.h disksim_simos_interface.h
+	@echo "***  Making disksim_interface.o  ***"
+	$(CC) -c $(CFLAGS) ../disksim_simos_interface.c
+
+memsdevice_cache.o: memsdevice_cache.c memsdevice_global.h memsdevice_cache.h
+	$(CC) -c $(CFLAGS) ../memsdevice_cache.c
+
+memsdevice_disksim.o: memsdevice_disksim.c memsdevice_disksim.h memsdevice_global.h
+	$(CC) -c $(CFLAGS) ../memsdevice_disksim.c
+
+memsdevice_event.o: memsdevice_event.c memsdevice_event.h memsdevice_global.h memsdevice_event.h
+	$(CC) -c $(CFLAGS) ../memsdevice_event.c
+
+memsdevice_mapping.o: memsdevice_mapping.c memsdevice_global.h
+	$(CC) -c $(CFLAGS) ../memsdevice_mapping.c
+
+#memsdevice_scheduler.o: memsdevice_scheduler.c memsdevice_global.h
+#	$(CC) -c $(CFLAGS) ../memsdevice_scheduler.c
+
+
+#syssim_driver.o: syssim_driver.c syssim_driver.h
+#	$(CC) -c $(CFLAGS) syssim_driver.c
+
+deps: ${DISKSIM_OBJ:.o=.d}
+
+%d: %c
+	@$(CC) -M $(CFLAGS) $< > $@
+
+ifdef INCLUDE_DEPS
+include ${DISKSIM_OBJ:.o=.d}
+endif

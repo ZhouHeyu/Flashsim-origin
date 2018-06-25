@@ -1,0 +1,12 @@
+#!gmake 
+
+ifndef SIMTOOLS
+SIMTOOLS = ../../../..
+endif
+
+include $(SIMTOOLS)/makedefs
+
+
+default:        simos-$(CPU)
+
+include $(SIMTOOLS)/Makefile.Std

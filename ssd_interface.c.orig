@@ -1,0 +1,930 @@
+/* 
+ * Contributors: Youngjae Kim (youkim@cse.psu.edu)
+ *               Aayush Gupta (axg354@cse.psu.edu_
+ *   
+ * Input: Block trace 
+ * Output: Average Response Time, Throughput, 
+ * # of page reads, # of page writes, # of block erases 
+ */
+
+#include "ssd_interface.h"
+#include "disksim_global.h"
+#include "dftl.h"
+
+// to collect gc overhead statistics for timeseries drawings 
+extern int merge_switch_num;
+extern int merge_partial_num;
+extern int merge_full_num;
+int old_merge_switch_num = 0;
+int old_merge_partial_num = 0;
+int old_merge_full_num= 0;
+int old_flash_gc_read_num = 0;
+int old_flash_erase_num = 0;
+int req_count_num = 1;
+int cache_hit, rqst_cnt;
+int flag1 = 1;
+int count = 0;
+#define WORKLOAD_SIZE 204800
+
+ int page_num_for_2nd_map_table;
+
+//1GB
+#define MAP_REAL_MAX_ENTRIES 6552// real map table size in bytes
+//1GB
+#define MAP_GHOST_MAX_ENTRIES 1640// ghost_num is no of entries chk if this is ok
+
+#define CACHE_MAX_ENTRIES 300
+int ghost_arr[MAP_GHOST_MAX_ENTRIES];
+int real_arr[MAP_REAL_MAX_ENTRIES];
+
+/***********************************************************************
+  Variables for statistics    
+ ***********************************************************************/
+unsigned int cnt_read = 0;
+unsigned int cnt_write = 0;
+unsigned int cnt_delete = 0;
+unsigned int cnt_evict_from_flash = 0;
+unsigned int cnt_evict_into_disk = 0;
+unsigned int cnt_fetch_miss_from_disk = 0;
+unsigned int cnt_fetch_miss_into_flash = 0;
+
+double sum_of_queue_time = 0.0;
+double sum_of_service_time = 0.0;
+double sum_of_response_time = 0.0;
+unsigned int total_num_of_req = 0;
+
+
+/***********************************************************************
+  Mapping table
+ ***********************************************************************/
+int real_min = -1;
+int real_max = 0;
+
+/***********************************************************************
+  Cache
+ ***********************************************************************/
+int cache_min = -1;
+int cache_max = 0;
+
+// Interface between disksim & fsim 
+void reset_flash_stat()
+{
+  flash_read_num = 0;
+  flash_write_num = 0;
+  flash_gc_read_num = 0;
+  flash_gc_write_num = 0; 
+  flash_erase_num = 0;
+  flash_oob_read_num = 0;
+  flash_oob_write_num = 0; 
+}
+
+FILE *fp_gc;
+double gc_di =0 ,gc_ti=0;
+
+int global_erase_cnt = 0;
+
+double calculate_delay_flash()
+{
+  double delay;
+  double read_delay, write_delay;
+  double erase_delay;
+  double gc_read_delay, gc_write_delay;
+  double oob_write_delay, oob_read_delay;
+
+  oob_read_delay  = (double)OOB_READ_DELAY  * flash_oob_read_num;
+  oob_write_delay = (double)OOB_WRITE_DELAY * flash_oob_write_num;
+
+  read_delay     = (double)READ_DELAY  * flash_read_num; 
+  write_delay    = (double)WRITE_DELAY * flash_write_num; 
+  erase_delay    = (double)ERASE_DELAY * flash_erase_num; 
+
+  global_erase_cnt += flash_erase_num;
+
+  gc_read_delay  = (double)GC_READ_DELAY  * flash_gc_read_num; 
+  gc_write_delay = (double)GC_WRITE_DELAY * flash_gc_write_num; 
+
+  delay = read_delay + write_delay + erase_delay + gc_read_delay + gc_write_delay + 
+    oob_read_delay + oob_write_delay;
+
+  if( flash_gc_read_num > 0 || flash_gc_write_num > 0 || flash_erase_num > 0 ) {
+    gc_ti += delay;
+  }
+  else {
+    gc_di += delay;
+  }
+
+  reset_flash_stat();
+
+  return delay;
+}
+
+
+/***********************************************************************
+  Initialize Flash Drive 
+  ***********************************************************************/
+void initFlash()
+{
+  blk_t total_util_blk_num;
+
+  total_util_sect_num  = flash_numblocks;
+  total_extra_sect_num = flash_extrblocks;
+  total_sect_num = total_util_sect_num + total_extra_sect_num; 
+
+  total_blk_num      = total_sect_num / SECT_NUM_PER_BLK;     // total block number
+  total_util_blk_num = total_util_sect_num / SECT_NUM_PER_BLK;    // total unique block number
+
+  global_total_blk_num = total_util_blk_num;
+
+  total_extr_blk_num = total_blk_num - total_util_blk_num;        // total extra block number
+
+  total_init_blk_num = total_blk_num;
+  ASSERT(total_extr_blk_num != 0);
+
+  if (nand_init(total_blk_num, 3) < 0) {
+    EXIT(-4); 
+  }
+
+  switch(ftl_type){
+
+    // pagemap
+    case 1: 
+            ftl_op = pm_setup();
+            break;
+    // blockmap
+    case 2:
+            ftl_op = bm_setup();
+            break;
+    // dftl 
+    case 3:
+            ftl_op = opm_setup();
+            break;
+    // fast
+    case 4:
+            ftl_op = lm_setup();
+            break;
+    default: 
+            break;
+  }
+
+  ftl_op->init(total_util_blk_num, total_extr_blk_num);
+
+  nand_stat_reset();
+
+  unique_blk_num = total_util_blk_num;
+  unique_log_blk_num = total_extr_blk_num; 
+  last_unique_log_blk = total_extr_blk_num; 
+}
+
+void printWearout()
+{
+  int i;
+  FILE *fp = fopen("wearout", "w");
+  
+  for(i = 0; i<nand_blk_num; i++)
+  {
+    fprintf(fp, "%d %d\n", i, nand_blk[i].state.ec); 
+  }
+
+  fclose(fp);
+}
+
+
+void endFlash()
+{
+  nand_stat_print(stdout);
+  nand_stat_print(outputfile);
+  ftl_op->end;
+  nand_end();
+}  
+
+/***********************************************************************
+  Send request (lsn, sector_cnt, operation flag)
+  ***********************************************************************/
+
+void send_flash_request(int start_blk_no, int block_cnt, int operation, int mapdir_flag)
+{
+	int size;
+	//size_t (*op_func)(sect_t lsn, size_t size);
+	size_t (*op_func)(sect_t lsn, size_t size, int mapdir_flag);
+
+        if((start_blk_no + block_cnt) >= total_util_sect_num){
+          printf("start_blk_no: %d, block_cnt: %d, total_util_sect_num: %d\n", 
+              start_blk_no, block_cnt, total_util_sect_num);
+          exit(0);
+        }
+
+	switch(operation){
+
+	//write
+	case 0:
+
+		op_func = ftl_op->write;
+		while (block_cnt> 0) {
+			size = op_func(start_blk_no, block_cnt, mapdir_flag);
+			start_blk_no += size;
+			block_cnt-=size;
+		}
+		break;
+	//read
+	case 1:
+
+
+		op_func = ftl_op->read;
+		while (block_cnt> 0) {
+			size = op_func(start_blk_no, block_cnt, mapdir_flag);
+			start_blk_no += size;
+			block_cnt-=size;
+		}
+		break;
+
+	default: 
+		break;
+	}
+}
+
+void find_real_max()
+{
+  int i; 
+
+  for(i=0;i < MAP_REAL_MAX_ENTRIES; i++) {
+      if(opagemap[real_arr[i]].map_age > opagemap[real_max].map_age) {
+          real_max = real_arr[i];
+      }
+  }
+}
+
+void find_real_min()
+{
+  
+  int i,index; 
+  int temp = 99999999;
+
+  for(i=0; i < MAP_REAL_MAX_ENTRIES; i++) {
+        if(opagemap[real_arr[i]].map_age <= temp) {
+            real_min = real_arr[i];
+            temp = opagemap[real_arr[i]].map_age;
+            index = i;
+        }
+  }    
+}
+
+int find_min_ghost_entry()
+{
+  int i; 
+
+  int ghost_min = 0;
+  int temp = 99999999; 
+
+    for(i=0; i < MAP_GHOST_MAX_ENTRIES; i++) {
+        if( opagemap[ghost_arr[i]].map_age <= temp) {
+            ghost_min = ghost_arr[i];
+            temp = opagemap[ghost_arr[i]].map_age;
+        }
+    }
+  return ghost_min;
+}
+
+void init_arr()
+{
+
+  int i;
+  for( i = 0; i < MAP_REAL_MAX_ENTRIES; i++) {
+      real_arr[i] = -1;
+  }
+  for( i = 0; i < MAP_GHOST_MAX_ENTRIES; i++) {
+      ghost_arr[i] = -1;
+  }
+}
+//check if *arr is ok or not
+int search_table(int *arr, int size, int val) 
+{
+    int i;
+    for(i =0 ; i < size; i++) {
+        if(arr[i] == val) {
+            return i;
+        }
+    }
+
+    printf("shouldnt come here for search_table()=%d,%d",val,size);
+    for( i = 0; i < size; i++) {
+      if(arr[i] != -1) {
+        printf("arr[%d]=%d ",i,arr[i]);
+      }
+    }
+    exit(1);
+    return -1;
+}
+
+int find_free_pos( int *arr, int size)
+{
+    int i;
+    for(i = 0 ; i < size; i++) {
+        if(arr[i] == -1) {
+            return i;
+        }
+    } 
+    printf("shouldnt come here for find_free_pos()");
+    exit(1);
+    return -1;
+}
+/*
+void synchronize_disk_flash()
+{
+  int i;
+  for(i = 0; i < TOTAL_MAP_ENTRIES; i++){
+    if((opagemap[i].map_status != MAP_REAL) && (opagemap[i].map_status != MAP_GHOST))
+      opagemap[i].map_status = 0;
+  }
+}
+*/
+
+
+//wear-leveling
+extern _u32 free_blk_no[2];
+int MIN_ERASE_BLK_NO = 0;
+extern int unique_blk_num;
+FILE *fp_total_unique_blk_num;
+
+
+void call_wearleveling(int least_worn_out_blk_no, int most_worn_out_blk_no)
+{
+  int i, j, k, l; 
+
+  ASSERT((nand_blk[least_worn_out_blk_no].state.ec + 2) <= WEAR_LEVEL_THRESHOLD);
+  ASSERT((nand_blk[most_worn_out_blk_no].state.ec + 2) <= WEAR_LEVEL_THRESHOLD);
+
+  int lsns1_hist[SECT_NUM_PER_BLK]; 
+  int lsns2_hist[SECT_NUM_PER_BLK]; 
+  int valid1_hist[PAGE_NUM_PER_BLK];
+  int valid2_hist[PAGE_NUM_PER_BLK];
+  int lsns1[SECT_NUM_PER_PAGE]; 
+  int lsns2[SECT_NUM_PER_PAGE]; 
+
+  memset(lsns1_hist, 0xFF, sizeof (lsns1_hist));
+  memset(lsns2_hist, 0xFF, sizeof (lsns2_hist));
+  memset(lsns1, 0xFF, sizeof (lsns1));
+  memset(lsns2, 0xFF, sizeof (lsns2));
+  memset(valid1_hist, 0xFF, sizeof (valid1_hist));
+  memset(valid2_hist, 0xFF, sizeof (valid2_hist));
+
+    //swap (i and least_worn_out_blk_no) 
+    //1. read entire block (least_worn_out_blk_no) and store them into some temporary memory 
+    int size1, size2;
+
+    for(k=0; k<PAGE_NUM_PER_BLK; k++)
+    {
+      size1 = nand_page_read(SECTOR(least_worn_out_blk_no, k * SECT_NUM_PER_PAGE), lsns1, 3); //3 is for wear-leveling 
+      size2 = nand_page_read(SECTOR(most_worn_out_blk_no, k * SECT_NUM_PER_PAGE), lsns2, 3);
+
+      //ASSERT(size1 == 4); ASSERT(size2 == 4);
+      if(size1 == 4){ valid1_hist[k] = 1; }
+
+      if(size2 == 4){ valid2_hist[k] = 1; }
+
+      // keep track of lsns...
+      for(l = 0; l < SECT_NUM_PER_PAGE; l++){
+        lsns1_hist[k*SECT_NUM_PER_PAGE+l] = lsns1[l];
+        lsns2_hist[k*SECT_NUM_PER_PAGE+l] = lsns2[l];
+      }
+    }
+
+    //2. erase least/most_worn_out_blk_no 
+    nand_erase(least_worn_out_blk_no);
+    nand_erase(most_worn_out_blk_no);
+    nand_blk[least_worn_out_blk_no].state.free = 0;
+    nand_blk[most_worn_out_blk_no].state.free = 0;
+    free_blk_num--;
+    free_blk_num--;
+
+    //3. write data read from into most/least worn out blocks
+    for(k=0; k<PAGE_NUM_PER_BLK; k++)
+    {
+      for(l = 0; l < SECT_NUM_PER_PAGE; l++){
+        lsns1[l] = lsns1_hist[k*SECT_NUM_PER_PAGE+l];
+        lsns2[l] = lsns2_hist[k*SECT_NUM_PER_PAGE+l];
+      }
+
+      nand_page_write(SECTOR(most_worn_out_blk_no, k*SECT_NUM_PER_PAGE) & (~OFF_MASK_SECT), lsns1, 1, 0);
+      nand_page_write(SECTOR(least_worn_out_blk_no, k*SECT_NUM_PER_PAGE) & (~OFF_MASK_SECT), lsns2, 1, 0);
+
+      // update mapping table 
+      if(valid1_hist[k] == 1){
+        pagemap[lsns1[0]/SECT_NUM_PER_PAGE].ppn = most_worn_out_blk_no*PAGE_NUM_PER_BLK + k; 
+      }
+      else {
+
+        for(l=0;l< SECT_NUM_PER_PAGE;l++) 
+          nand_invalidate((SECTOR(most_worn_out_blk_no, k*SECT_NUM_PER_PAGE) & (~OFF_MASK_SECT)) + l,lsns1[l]);
+      }
+
+      if(valid2_hist[k] == 1){
+        pagemap[lsns2[0]/SECT_NUM_PER_PAGE].ppn = least_worn_out_blk_no*PAGE_NUM_PER_BLK + k; 
+      }
+      else {
+        for(l=0;l< SECT_NUM_PER_PAGE;l++)
+          nand_invalidate((SECTOR(least_worn_out_blk_no, k*SECT_NUM_PER_PAGE) & (~OFF_MASK_SECT)) + l,lsns2[l]);
+      }
+    }
+
+    if((nand_blk[least_worn_out_blk_no].state.free == 1) || (nand_blk[most_worn_out_blk_no].state.free == 1)){
+      printf("error");
+    }
+}
+
+#define THRESHOLD 2 
+
+void find_blk(int * hot_blk, int * cold_blk)
+{
+    int i,j=-1;  
+    int hot_cnt=0, cold_cnt = 999999;
+    //int hot_index = -1 , cold_index = -1;
+    *hot_blk = *cold_blk = j;
+    int *hot_index, *cold_index;
+
+    for ( i = 0 ; i < nand_blk_num; i++){
+      // find hot block
+      if((wear_level_flag[i] == 1) || (block_dead_flag[i] == 1) || (nand_blk[i].state.ec > (WEAR_LEVEL_THRESHOLD-2)) ) continue;
+      if(block_er_flag[i] == 1) {
+          //if(nand_blk[i].state.update_ec > hot_cnt &&  i != free_blk_no[1] && nand_blk[i].state.free != 1 ) {
+          //    hot_cnt = nand_blk[i].state.update_ec;
+          if(nand_blk[i].state.ec > hot_cnt &&  i != free_blk_no[1] && nand_blk[i].state.free != 1 ) {
+              hot_cnt = nand_blk[i].state.ec;
+              //hot_index = &i;
+              *hot_blk = i;
+          }
+      }
+      // find cold block
+      else {
+          //if(nand_blk[i].state.update_ec < cold_cnt &&  i != free_blk_no[1] && nand_blk[i].state.free != 1 ) {
+          //    cold_cnt = nand_blk[i].state.update_ec;
+          if(nand_blk[i].state.ec < cold_cnt &&  i != free_blk_no[1] && nand_blk[i].state.free != 1 ) {
+              cold_cnt = nand_blk[i].state.ec;
+              //j = i;
+              //cold_index = &j;
+              *cold_blk = i;
+          }
+      }
+    }
+           
+    if( hot_cnt < cold_cnt) {
+      *hot_blk = j;
+      *cold_blk = j;
+    }
+   // hot_blk = hot_index;  
+   // cold_blk = cold_index;  
+   // wear_level_flag[*hot_index] = wear_level_flag[*cold_index] = 1;
+    wear_level_flag[*hot_blk] = wear_level_flag[*cold_blk] = 1;
+}
+
+void find_cold_blk(int *cold_blk, int curr_blk)
+{
+    int i, j=-1;  
+    int cold_cnt = 999999;
+    *cold_blk = j;
+    for ( i = 0 ; i < nand_blk_num; i++){
+      if((wear_level_flag[i] == 1) || (block_dead_flag[i] == 1) || (nand_blk[i].state.ec > (WEAR_LEVEL_THRESHOLD-2)) || (i == curr_blk)) continue;
+
+      if(nand_blk[i].state.ec < cold_cnt &&  i != free_blk_no[1] && nand_blk[i].state.free != 1 ) {
+          cold_cnt = nand_blk[i].state.ec;
+          *cold_blk = i;
+      }
+    }
+           
+    wear_level_flag[curr_blk] =  wear_level_flag[*cold_blk] = 1;
+}
+
+void no_wear_level(int curr_blk_no)
+{
+    int i;
+    int hot_idx;
+    int cold_idx;
+
+     for(i=0; i< nand_blk_num; i++) {
+       if(block_er_flag[i] >= 1)
+         flag_er_cnt++;
+     }
+
+     find_cold_blk(&cold_idx, curr_blk_no);
+
+     if(cold_idx == -1 ) return;
+
+      call_wearleveling(cold_idx, hot_idx); 
+
+    
+      for(i = 0; i < nand_blk_num; i++){
+          wear_level_flag[i] = 0;
+          nand_blk[i].state.update_ec = 0;
+          block_er_flag[i] = 0;
+      }
+      total_er_cnt = 0;
+      flag_er_cnt = 0;
+}
+
+void wear_level()
+{
+    int i;
+    int hot_idx;
+    int cold_idx;
+
+    for(i = 0; i<total_blk_num; i++)
+    {
+        find_blk(&hot_idx, &cold_idx);
+        if( hot_idx == -1 || cold_idx == -1 )
+          break;
+        call_wearleveling(cold_idx, hot_idx); 
+    }
+    
+    for(i = 0; i < nand_blk_num; i++){
+          wear_level_flag[i] = 0;
+          nand_blk[i].state.update_ec = 0;
+          block_er_flag[i] = 0;
+    }
+    total_er_cnt = 0;
+    flag_er_cnt = 0;
+}
+
+int count_valid = 0;
+int move_count = 0;
+  static int last_flush;
+void flush(int flush_flag)
+{
+  int i,j,blk,flag,valid;
+  _u32 copy[4];
+  int count, remainder,quotient;
+
+
+  if(last_flush >= WORKLOAD_SIZE) {
+    exit(0);
+  }
+
+  for(i=0; i < PAGE_NUM_PER_BLK * 15; i++) {
+            valid = nand_oob_read(SECTOR((last_flush+i)/64, ((last_flush+i)%64)*SECT_NUM_PER_PAGE));
+            if( valid > 0 ) {
+                for(j=0; j < SECT_NUM_PER_PAGE; j++) {
+                          nand_invalidate(pagemap[last_flush+i].ppn*SECT_NUM_PER_PAGE + j, (last_flush+i)*SECT_NUM_PER_PAGE + j);
+                          dm_table[(last_flush+i) * 4 + j] = DEV_DISK; 
+                }
+                pagemap[last_flush+i].flash_valid = 0;
+            }
+  }
+            last_flush+=i;
+}
+
+int wearleveling_starting_flag = 0;
+int req_count_global = 0;
+int global_write_count = 0;
+long int global_write_count1 = 0;
+int wear_level_hybrid_flag = 0;
+double callFsim(unsigned int secno, int scount, int operation)
+{
+  double delay; 
+  int bcount;
+  unsigned int blkno; 
+  int cnt,z; int min_ghost;
+  int count_valid,valid;
+  int temp_cnt = 0;
+
+  if((total_init_blk_num < 1500))
+  {
+    exit(0);
+  }
+
+  int pos=-1,pos_real=-1,pos_ghost=-1;
+
+  if(ftl_type == 3) {
+      page_num_for_2nd_map_table = (opagemap_num / MAP_ENTRIES_PER_PAGE);
+    
+      init_arr();
+
+      if((opagemap_num % MAP_ENTRIES_PER_PAGE) != 0){
+        page_num_for_2nd_map_table++;
+      }
+  }
+      
+  // page based FTL 
+  if(ftl_type == 1 ) { 
+
+    blkno = secno / 4;
+    bcount = (secno + scount -1)/4 - (secno)/4 + 1;
+
+    if(operation==0){ 
+      write_count++; 
+      global_write_count++; 
+      global_write_count1++; 
+    }
+    else read_count++;
+
+
+  if(warm_done == 1)
+  {
+
+  if(write_count >   25000 && total_init_blk_num < 8230) {
+    write_count = 0;
+    flush(0);
+  }
+
+        if(global_write_count >= 100) {
+
+              wear_level_hybrid_flag = 1;
+
+          if( wear_level_hybrid_flag == 1  ){
+            if(total_er_cnt  > 25){
+                temp_cnt=0;
+
+                if(global_write_count1 > 50000){ // 1x-2x
+                  wearleveling_starting_flag = 1;
+                  global_write_count1 = 0;
+                }
+
+                if(wearleveling_starting_flag == 1){
+                  wear_level();
+                  reset_flash_stat();
+
+                  wearleveling_starting_flag = 0;
+                }
+            }
+          }
+          global_write_count = 0;
+
+          fprintf(fp_total_unique_blk_num, "%lf\t%d\n", simtime, total_init_blk_num);
+          //printf("%d\n", total_init_blk_num);
+          //when do we stop
+          //if(nand_blk[0].state.ec > (WEAR_LEVEL_THRESHOLD - 3)) 
+          //  disksim->stop_sim = TRUE;
+       }
+  }
+
+  //}
+
+
+    //find cold block and set it dead block  
+    int k;
+    int curr_blk_no = pagemap[blkno].ppn/PAGE_NUM_PER_BLK;
+    int wl_flag = 0;
+    int cold_idx;
+
+    /*
+    if(nand_blk[curr_blk_no].state.ec >= WEAR_LEVEL_THRESHOLD)
+    {
+      for(k = 0; k< nand_blk_num; k++){
+        if((block_er_flag[k] == 0) && (k != free_blk_no[1]) 
+            && (nand_blk[k].state.free != 1) && (k != curr_blk_no)
+            && (block_dead_flag[k] != 1)){
+          cold_idx = k; 
+          wl_flag = 1;
+          break;
+        }
+      }
+      if(wl_flag = 1){
+        call_wearleveling(cold_idx, curr_blk_no); 
+        //block_dead_flag[curr_blk_no] = 1;
+        //unique_log_blk_num--; 
+      }
+      else{
+        printf("shouldn't happen !\n"); exit(0);
+      }
+    }
+
+    if(write_count % 2000 == 0){
+      if(((float)total_er_cnt/(float)flag_er_cnt) > THRESHOLD)
+      {
+        total_er_cnt = 0;
+        flag_er_cnt = 0;
+        bzero(block_er_flag, sizeof(block_er_flag));
+      }
+    }
+    */
+
+    /*
+    if(nand_blk[curr_blk_no].state.ec >= WEAR_LEVEL_THRESHOLD)
+    {
+      no_wear_level(curr_blk_no);
+    }
+    */
+
+    // youngjae commented out the below
+    //if ((flag_er_cnt != 0 ) && (((float)total_er_cnt/(float)flag_er_cnt) >= THRESHOLD)) {
+
+    /*
+    if(write_count % 1000 == 0){
+      //if(!total_er_cnt)
+        wear_level();
+    }
+    */
+
+
+    /*
+    if(total_er_cnt > 12){
+      wear_level();
+    }
+    */
+  }  
+  // block based FTL 
+  else if(ftl_type == 2){
+    blkno = secno/4;
+    bcount = (secno + scount -1)/4 - (secno)/4 + 1;
+  }
+  // o-pagemap scheme
+  else if(ftl_type == 3 ) { 
+    blkno = secno / 4;
+    blkno += page_num_for_2nd_map_table;
+    bcount = (secno + scount -1)/4 - (secno)/4 + 1;
+  }  
+  // FAST scheme
+  else if(ftl_type == 4){
+    blkno = secno/4;
+    bcount = (secno + scount -1)/4 - (secno)/4 + 1;
+  }
+
+  cnt = bcount;
+
+  switch(operation)
+  {
+    //write/read
+    case 0:
+    case 1:
+
+    while(cnt > 0)
+    {
+          cnt--;
+
+        // page based FTL
+        if(ftl_type == 1){
+          if(pagemap[blkno].flash_valid == 1 ) { 
+          //pagemap[blkno].access++;
+              send_flash_request(blkno*4, 4, operation, 1); 
+          }
+          /*else {
+            pagemap[blkno].free = 1; //hack needed when flushing data to disk  
+            pagemap[blkno].flash_valid = 1; 
+              send_flash_request(blkno*4, 4, operation, 1); 
+          }*/
+          blkno++;
+        }
+
+        // blck based FTL
+        else if(ftl_type == 2){
+          send_flash_request(blkno*4, 4, operation, 1); 
+          blkno++;
+        }
+
+        // opagemap ftl scheme
+        else if(ftl_type == 3)
+        {
+
+          /************************************************
+            primary map table 
+          *************************************************/
+          //1. pagemap in SRAM 
+
+            rqst_cnt++;
+          if((opagemap[blkno].map_status == MAP_REAL) || (opagemap[blkno].map_status == MAP_GHOST))
+          {
+            cache_hit++;
+
+            opagemap[blkno].map_age++;
+
+            if(opagemap[blkno].map_status == MAP_GHOST){
+            // consider replacement
+              if ( real_min == -1 ) {
+                real_min = 0;
+                find_real_min();
+              }    
+              if(opagemap[real_min].map_age <= opagemap[blkno].map_age) 
+              {
+                // swap
+                find_real_min();  // probably the blkno is the new real_min alwaz
+                opagemap[blkno].map_status = MAP_REAL;
+                opagemap[real_min].map_status = MAP_GHOST;
+
+                pos_ghost = search_table(ghost_arr,MAP_GHOST_MAX_ENTRIES,blkno);
+                ghost_arr[pos_ghost] = -1;
+                
+                pos_real = search_table(real_arr,MAP_REAL_MAX_ENTRIES,real_min);
+                real_arr[pos_real] = -1;
+
+                real_arr[pos_real]   = blkno; 
+                ghost_arr[pos_ghost] = real_min; 
+
+              }
+            }
+            else if(opagemap[blkno].map_status == MAP_REAL) 
+            {
+              if ( real_max == -1 ) {
+                real_max = 0;
+                find_real_max();
+              }
+
+              if(opagemap[real_max].map_age <= opagemap[blkno].map_age)
+              {
+                real_max = blkno;
+              }  
+            }
+            else {
+              printf("forbidden/shouldnt happen real =%d , ghost =%d\n",MAP_REAL,MAP_GHOST);
+            }
+          }
+
+          //2. opagemap not in SRAM 
+          // INVALID means that it is not in SRAM
+          else
+          {
+            //if map table in SRAM is full
+            if((MAP_REAL_MAX_ENTRIES - MAP_REAL_NUM_ENTRIES) == 0)
+            {
+              if((MAP_GHOST_MAX_ENTRIES - MAP_GHOST_NUM_ENTRIES) == 0)
+              { //evict one entry from ghost cache to DRAM or Disk, delay = DRAM or disk write, 1 oob write for invalidation 
+                min_ghost = find_min_ghost_entry();
+                //printf("new-block =%d evicting block = %d",blkno,min_ghost);
+                  evict++;
+
+                if(opagemap[min_ghost].update == 1) {
+                  update_reqd++;
+                  opagemap[min_ghost].update = 0;
+                  send_flash_request(((min_ghost-page_num_for_2nd_map_table)/MAP_ENTRIES_PER_PAGE)*4, 4, 1, 2);   // read from 2nd mapping table then update it
+
+                  send_flash_request(((min_ghost-page_num_for_2nd_map_table)/MAP_ENTRIES_PER_PAGE)*4, 4, 0, 2);   // write into 2nd mapping table 
+                } 
+                opagemap[min_ghost].map_status = MAP_INVALID;
+
+
+                MAP_GHOST_NUM_ENTRIES--;
+
+                //evict one entry from real cache to ghost cache 
+                MAP_REAL_NUM_ENTRIES--;
+                MAP_GHOST_NUM_ENTRIES++;
+                find_real_min();
+                opagemap[real_min].map_status = MAP_GHOST;
+
+                pos = search_table(ghost_arr,MAP_GHOST_MAX_ENTRIES,min_ghost);
+                ghost_arr[pos]=-1;
+
+                
+                ghost_arr[pos]= real_min;
+                
+                pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,real_min);
+                real_arr[pos]=-1;
+              }
+              else{
+                //evict one entry from real cache to ghost cache 
+                
+                MAP_REAL_NUM_ENTRIES--;
+                find_real_min();
+                opagemap[real_min].map_status = MAP_GHOST;
+               
+                pos = search_table(real_arr,MAP_REAL_MAX_ENTRIES,real_min);
+                real_arr[pos]=-1;
+
+                pos = find_free_pos(ghost_arr,MAP_GHOST_MAX_ENTRIES);
+                ghost_arr[pos]=real_min;
+                
+                MAP_GHOST_NUM_ENTRIES++;
+              }
+            }
+
+            flash_hit++;
+            //send_flash_request(blkno*4, 4, 1, 2);   // read from 2nd mapping table
+            send_flash_request(((blkno-page_num_for_2nd_map_table)/MAP_ENTRIES_PER_PAGE)*4, 4, 1, 2);   // read from 2nd mapping table
+
+            opagemap[blkno].map_status = MAP_REAL;
+
+            opagemap[blkno].map_age = opagemap[real_max].map_age + 1;
+            real_max = blkno;
+            MAP_REAL_NUM_ENTRIES++;
+            
+            pos = find_free_pos(real_arr,MAP_REAL_MAX_ENTRIES);
+            real_arr[pos] = blkno;
+          }
+
+          if(operation==0){
+            write_count++;
+            opagemap[blkno].update = 1;
+          }
+          else
+             read_count++;
+
+         send_flash_request(blkno*4, 4, operation, 1); 
+
+          blkno++;
+        }
+
+        // FAST scheme  
+        else if(ftl_type == 4){ 
+
+          if(operation == 0){
+            write_count++;
+          }
+          else read_count++;
+
+          send_flash_request(blkno*4, 4, operation, 1); //cache_min is a page for page baseed FTL
+          blkno++;
+        }
+    }
+    break;
+  }
+
+  delay = calculate_delay_flash();
+
+  return delay;
+}
+

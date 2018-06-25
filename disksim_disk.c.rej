@@ -1,0 +1,35 @@
+***************
+*** 1149,1164 ****
+  }
+  
+  
+- static int disk_get_number_of_blocks(int n) {
+    return disksim->diskinfo->disks[n]->model->dm_sectors;
+  }
+  
+- static int disk_get_numcyls(int n) {
+    return disksim->diskinfo->disks[n]->model->dm_cyls;
+  }
+  
+  // this is an alias for dm_translate_ltop, basically
+- static void 
+  disk_get_mapping(int maptype, 
+  		 int n, 
+  		 int lbn, 
+--- 1149,1164 ----
+  }
+  
+  
++ int disk_get_number_of_blocks(int n) {
+    return disksim->diskinfo->disks[n]->model->dm_sectors;
+  }
+  
++ int disk_get_numcyls(int n) {
+    return disksim->diskinfo->disks[n]->model->dm_cyls;
+  }
+  
+  // this is an alias for dm_translate_ltop, basically
++ void 
+  disk_get_mapping(int maptype, 
+  		 int n, 
+  		 int lbn, 

@@ -1,0 +1,582 @@
+Seulement dans src.release/: ~
+Seulement dans src: ChangeLog
+diff -crB src.release/dftl.c src/dftl.c
+*** src.release/dftl.c	2009-06-15 07:05:37.000000000 +0200
+--- src/dftl.c	2010-03-24 17:11:12.000000000 +0100
+***************
+*** 66,82 ****
+    int i;
+    int lpn = lsn/SECT_NUM_PER_PAGE; // logical page number
+    int size_page = size/SECT_NUM_PER_PAGE; // size in page 
+  
+    sect_t s_lsn;	// starting logical sector number
+    sect_t s_psn; // starting physical sector number 
+  
+    ASSERT(lpn < opagemap_num);
+    ASSERT(lpn + size_page <= opagemap_num);
+  
+-   sect_t lsns[SECT_NUM_PER_PAGE];
+    memset (lsns, 0xFF, sizeof (lsns));
+  
+!   int sect_num = (size < SECT_NUM_PER_PAGE) ? size : SECT_NUM_PER_PAGE;
+  
+    if(mapdir_flag == 2){
+      s_psn = mapdir[lpn].ppn * SECT_NUM_PER_PAGE;
+--- 66,84 ----
+    int i;
+    int lpn = lsn/SECT_NUM_PER_PAGE; // logical page number
+    int size_page = size/SECT_NUM_PER_PAGE; // size in page 
++   int sect_num;
+  
+    sect_t s_lsn;	// starting logical sector number
+    sect_t s_psn; // starting physical sector number 
+  
++   sect_t lsns[SECT_NUM_PER_PAGE];
++ 
+    ASSERT(lpn < opagemap_num);
+    ASSERT(lpn + size_page <= opagemap_num);
+  
+    memset (lsns, 0xFF, sizeof (lsns));
+  
+!   sect_num = (size < SECT_NUM_PER_PAGE) ? size : SECT_NUM_PER_PAGE;
+  
+    if(mapdir_flag == 2){
+      s_psn = mapdir[lpn].ppn * SECT_NUM_PER_PAGE;
+***************
+*** 120,129 ****
+    int i,z, j,m,q, benefit = 0;
+    int k,old_flag,temp_arr[PAGE_NUM_PER_BLK],temp_arr1[PAGE_NUM_PER_BLK],map_arr[PAGE_NUM_PER_BLK]; 
+    int valid_flag,pos;
+-   victim_blk_no = opm_gc_cost_benefit();
+  
+    _u32 copy_lsn[SECT_NUM_PER_PAGE], copy[SECT_NUM_PER_PAGE];
+    _u16 valid_sect_num,  l, s;
+    memset(copy_lsn, 0xFF, sizeof (copy_lsn));
+  
+    s = k = OFF_F_SECT(free_page_no[small]);
+--- 122,132 ----
+    int i,z, j,m,q, benefit = 0;
+    int k,old_flag,temp_arr[PAGE_NUM_PER_BLK],temp_arr1[PAGE_NUM_PER_BLK],map_arr[PAGE_NUM_PER_BLK]; 
+    int valid_flag,pos;
+  
+    _u32 copy_lsn[SECT_NUM_PER_PAGE], copy[SECT_NUM_PER_PAGE];
+    _u16 valid_sect_num,  l, s;
++ 
++   victim_blk_no = opm_gc_cost_benefit();
+    memset(copy_lsn, 0xFF, sizeof (copy_lsn));
+  
+    s = k = OFF_F_SECT(free_page_no[small]);
+***************
+*** 281,286 ****
+--- 284,293 ----
+    int lpn = lsn/SECT_NUM_PER_PAGE; // logical page number
+    int size_page = size/SECT_NUM_PER_PAGE; // size in page 
+    int ppn;
++   int small;
++ 
++   sect_t lsns[SECT_NUM_PER_PAGE];
++   int sect_num = SECT_NUM_PER_PAGE;
+  
+    sect_t s_lsn;	// starting logical sector number
+    sect_t s_psn; // starting physical sector number 
+***************
+*** 293,299 ****
+    s_lsn = lpn * SECT_NUM_PER_PAGE;
+  
+  
+-   int small;
+    if(mapdir_flag == 2) //map page
+      small = 0;
+    else if ( mapdir_flag == 1) //data page
+--- 300,305 ----
+***************
+*** 320,328 ****
+      }
+    }
+  
+-   sect_t lsns[SECT_NUM_PER_PAGE];
+    memset (lsns, 0xFF, sizeof (lsns));
+-   int sect_num = SECT_NUM_PER_PAGE;
+    
+    s_psn = SECTOR(free_blk_no[small], free_page_no[small]);
+  
+--- 326,332 ----
+***************
+*** 389,394 ****
+--- 393,399 ----
+  int opm_init(blk_t blk_num, blk_t extra_num)
+  {
+    int i;
++   int mapdir_num;
+  
+    opagemap_num = blk_num * PAGE_NUM_PER_BLK;
+  
+***************
+*** 401,407 ****
+      return -1;
+    }
+  
+!   int mapdir_num = (opagemap_num / MAP_ENTRIES_PER_PAGE);
+  
+    if((opagemap_num % MAP_ENTRIES_PER_PAGE) != 0){
+      printf("opagemap_num % MAP_ENTRIES_PER_PAGE is not zero\n"); 
+--- 406,412 ----
+      return -1;
+    }
+  
+!   mapdir_num = (opagemap_num / MAP_ENTRIES_PER_PAGE);
+  
+    if((opagemap_num % MAP_ENTRIES_PER_PAGE) != 0){
+      printf("opagemap_num % MAP_ENTRIES_PER_PAGE is not zero\n"); 
+Seulement dans src.release/: dftl.d
+Seulement dans src.release/: disksim_bus.d
+Seulement dans src.release/: disksim_cache.d
+Seulement dans src.release/: disksim_cachedev.d
+Seulement dans src.release/: disksim_cachemem.d
+Seulement dans src.release/: disksim_controller.d
+Seulement dans src.release/: disksim_ctlrdumb.d
+Seulement dans src.release/: disksim_ctlrsmart.d
+Seulement dans src.release/: disksim.d
+Seulement dans src.release/: disksim_device.d
+Seulement dans src.release/: disksim_diskcache.d
+Seulement dans src.release/: disksim_diskctlr.d
+Seulement dans src.release/: disksim_disk.d
+Seulement dans src.release/: disksim_interface.d
+Seulement dans src.release/: disksim_intr.d
+Seulement dans src.release/: disksim_iodriver.d
+Seulement dans src.release/: disksim_ioqueue.d
+Seulement dans src.release/: disksim_iosim.d
+Seulement dans src.release/: disksim_iotrace.d
+Seulement dans src.release/: disksim_loadparams.d
+diff -crB src.release/disksim_logorg.c src/disksim_logorg.c
+*** src.release/disksim_logorg.c	2009-06-15 01:05:35.000000000 +0200
+--- src/disksim_logorg.c	2010-03-24 16:55:03.000000000 +0100
+***************
+*** 710,718 ****
+    double flash_resp;
+  
+    double int_arr;
+-   curr_req_arr = curr->time;
+-   int_arr = curr_req_arr - old_req_arr;
+-   old_req_arr = curr_req_arr;
+  
+    int rw_flag = (curr->flags & READ);
+    double prev_dev_serv_time = DEVICE_SERVICE_TIME;
+--- 710,715 ----
+***************
+*** 724,729 ****
+--- 721,731 ----
+      seq_flag = 1;
+    else seq_flag = 0;
+  
++   curr_req_arr = curr->time;
++   int_arr = curr_req_arr - old_req_arr;
++   old_req_arr = curr_req_arr;
++ 
++ 
+    flash_resp = F_COEFF_INTARR_T * int_arr + F_COEFF_RW_T * rw_flag + 
+      F_COEFF_SEQ_T * seq_flag + F_COEFF_DS_PREV_T * prev_dev_serv_time + 
+      F_COEFF_REQ_SIZE_T * req_size + F_INTERCEPT;
+Seulement dans src.release/: disksim_logorg.d
+Seulement dans src.release/: disksim_main.d
+Seulement dans src.release/: disksim_malloc.d
+Seulement dans src.release/: disksim_pfdisp.d
+Seulement dans src.release/: disksim_pfsim.d
+Seulement dans src.release/: disksim_rand48.d
+Seulement dans src.release/: disksim_redun.d
+Seulement dans src.release/: disksim_simpledisk.d
+Seulement dans src.release/: disksim_simpleflash.d
+Seulement dans src.release/: disksim_stat.d
+Seulement dans src.release/: disksim_statload.d
+Seulement dans src.release/: disksim_synthio.d
+diff -crB src.release/fast.c src/fast.c
+*** src.release/fast.c	2009-06-15 07:06:20.000000000 +0200
+--- src/fast.c	2010-03-24 16:52:23.000000000 +0100
+***************
+*** 60,65 ****
+--- 60,66 ----
+        int size_page = size/SECT_NUM_PER_PAGE;   		
+        int offset = lpn%PAGE_NUM_PER_BLK;
+        int valid_flag;
++       int sect_num;
+  
+        sect_t s_lsn;	
+        sect_t s_psn; 
+***************
+*** 71,77 ****
+          ASSERT(0);
+        }
+  
+!       int sect_num = 4;
+  
+        s_psn = ((BMT[lbn] * PAGE_NUM_PER_BLK + offset) * SECT_NUM_PER_PAGE);
+        s_lsn = lpn * SECT_NUM_PER_PAGE;
+--- 72,78 ----
+          ASSERT(0);
+        }
+  
+!       sect_num = 4;
+  
+        s_psn = ((BMT[lbn] * PAGE_NUM_PER_BLK + offset) * SECT_NUM_PER_PAGE);
+        s_lsn = lpn * SECT_NUM_PER_PAGE;
+***************
+*** 342,353 ****
+  
+  void merge_full(int pmt_index)  
+  {
+- 
+-     if(PMT[pmt_index].fpc != 0 && pmt_index == 0) {
+-         printf("something sucks");
+-         ASSERT(0);
+-     }
+- 
+      int i,j,k,m,h;
+      int size;
+      int old_pbn;
+--- 343,348 ----
+***************
+*** 357,362 ****
+--- 352,363 ----
+      sect_t lsns[SECT_NUM_PER_PAGE];
+  
+  
++     if(PMT[pmt_index].fpc != 0 && pmt_index == 0) {
++         printf("something sucks");
++         ASSERT(0);
++     }
++ 
++ 
+      // Check with all page in a log block 
+      for(i = 0; i<PAGE_NUM_PER_BLK; i++)
+      {
+***************
+*** 864,869 ****
+--- 865,872 ----
+  /********************* INIT **********************************/ 
+  int lm_init(blk_t blk_num, blk_t extra_num)   
+  {
++   int i;
++ 
+    total_blk_num = blk_num;
+    BMT = (int *)malloc(sizeof(int) * blk_num);
+    PMT = (struct LogMap*)malloc(sizeof(struct LogMap)*extra_num);
+***************
+*** 872,878 ****
+    if ((BMT== NULL) || (PMT == NULL)) { return -1; }
+  
+    memset(BMT, -1, sizeof(int) * blk_num);
+-   int i;
+    for(i = 0; i < total_log_blk_num; i++){
+      PMT[i].pbn = -1;
+      PMT[i].fpc = PAGE_NUM_PER_BLK;
+--- 875,880 ----
+Seulement dans src.release/: fast.d
+diff -crB src.release/flash.c src/flash.c
+*** src.release/flash.c	2009-06-15 07:04:36.000000000 +0200
+--- src/flash.c	2010-03-24 16:56:27.000000000 +0100
+***************
+*** 93,98 ****
+--- 93,101 ----
+  /**************** NAND INIT **********************/
+  int nand_init (_u32 blk_num, _u8 min_free_blk_num)
+  {
++   _u32 blk_no;
++   int i;
++ 
+    nand_end();
+  
+    nand_blk = (struct nand_blk_info *)malloc(sizeof (struct nand_blk_info) * blk_num);
+***************
+*** 103,109 ****
+    }
+    memset(nand_blk, 0xFF, sizeof (struct nand_blk_info) * blk_num);
+  
+-   _u32 blk_no;
+    
+    nand_blk_num = blk_num;
+  
+--- 106,111 ----
+***************
+*** 116,122 ****
+      nand_blk[blk_no].ipc = 0;
+      nand_blk[blk_no].lwn = -1;
+  
+!     int i;
+      for(i = 0; i<SECT_NUM_PER_BLK; i++){
+        nand_blk[blk_no].sect[i].free = 1;
+        nand_blk[blk_no].sect[i].valid = 0;
+--- 118,124 ----
+      nand_blk[blk_no].ipc = 0;
+      nand_blk[blk_no].lwn = -1;
+  
+! 
+      for(i = 0; i<SECT_NUM_PER_BLK; i++){
+        nand_blk[blk_no].sect[i].free = 1;
+        nand_blk[blk_no].sect[i].valid = 0;
+***************
+*** 326,331 ****
+--- 328,335 ----
+  /**************** NAND BLOCK ERASE **********************/
+  void nand_erase (_u32 blk_no)
+  {
++   int i;
++ 
+    ASSERT(blk_no < nand_blk_num);
+  
+    ASSERT(nand_blk[blk_no].fpc <= SECT_NUM_PER_BLK);
+***************
+*** 340,346 ****
+    nand_blk[blk_no].ipc = 0;
+    nand_blk[blk_no].lwn = -1;
+  
+!   int i;
+    for(i = 0; i<SECT_NUM_PER_BLK; i++){
+      nand_blk[blk_no].sect[i].free = 1;
+      nand_blk[blk_no].sect[i].valid = 0;
+--- 344,350 ----
+    nand_blk[blk_no].ipc = 0;
+    nand_blk[blk_no].lwn = -1;
+  
+! 
+    for(i = 0; i<SECT_NUM_PER_BLK; i++){
+      nand_blk[blk_no].sect[i].free = 1;
+      nand_blk[blk_no].sect[i].valid = 0;
+***************
+*** 385,395 ****
+  _u32 nand_get_free_blk (int isGC) 
+  {
+    _u32 blk_no = -1, i;
+-   MIN_ERASE = 9999999;
+    int flag = 0,flag1=0;
+    flag = 0;
+    flag1 = 0;
+  
+    //in case that there is no avaible free block -> GC should be called !
+    if ((isGC == 0) && (min_fb_num >= free_blk_num)) {
+      //printf("min_fb_num: %d\n", min_fb_num);
+--- 389,399 ----
+  _u32 nand_get_free_blk (int isGC) 
+  {
+    _u32 blk_no = -1, i;
+    int flag = 0,flag1=0;
+    flag = 0;
+    flag1 = 0;
+  
++   MIN_ERASE = 9999999;
+    //in case that there is no avaible free block -> GC should be called !
+    if ((isGC == 0) && (min_fb_num >= free_blk_num)) {
+      //printf("min_fb_num: %d\n", min_fb_num);
+Seulement dans src.release/: flash.d
+Seulement dans src.release/: hplcomb.d
+Seulement dans src.release/: nand.d
+diff -crB src.release/pagemap.c src/pagemap.c
+*** src.release/pagemap.c	2009-06-15 07:05:13.000000000 +0200
+--- src/pagemap.c	2010-03-24 16:58:38.000000000 +0100
+***************
+*** 56,72 ****
+    int i;
+    int lpn = lsn/SECT_NUM_PER_PAGE;					
+    int size_page = size/SECT_NUM_PER_PAGE;  
+  
+    sect_t s_lsn;
+    sect_t s_psn; 
+  
+    ASSERT(lpn < pagemap_num);
+    ASSERT(lpn + size_page <= pagemap_num);
+  
+!   sect_t lsns[SECT_NUM_PER_PAGE];
+    memset (lsns, 0xFF, sizeof (lsns));
+  
+!   int sect_num = (size < SECT_NUM_PER_PAGE) ? size : SECT_NUM_PER_PAGE;
+  
+    if(mapdir_flag == 2){
+      s_psn = mapdir[lpn].ppn * SECT_NUM_PER_PAGE;
+--- 56,75 ----
+    int i;
+    int lpn = lsn/SECT_NUM_PER_PAGE;					
+    int size_page = size/SECT_NUM_PER_PAGE;  
++   sect_t lsns[SECT_NUM_PER_PAGE];
+  
+    sect_t s_lsn;
+    sect_t s_psn; 
+  
++   int sect_num;
++ 
+    ASSERT(lpn < pagemap_num);
+    ASSERT(lpn + size_page <= pagemap_num);
+  
+! 
+    memset (lsns, 0xFF, sizeof (lsns));
+  
+!   sect_num = (size < SECT_NUM_PER_PAGE) ? size : SECT_NUM_PER_PAGE;
+  
+    if(mapdir_flag == 2){
+      s_psn = mapdir[lpn].ppn * SECT_NUM_PER_PAGE;
+***************
+*** 104,115 ****
+    int i, j,m, benefit = 0;
+    
+    int valid_flag;
+-   victim_blk_no = pm_gc_cost_benefit();
+  
+  
+    _u32 copy_lsn[SECT_NUM_PER_PAGE], copy[SECT_NUM_PER_PAGE];
+    _u16 valid_sect_num, k, l, s;
+  
+    memset(copy_lsn, 0xFF, sizeof (copy_lsn));
+  
+    s = k = OFF_F_SECT(free_page_no[small]);
+--- 107,119 ----
+    int i, j,m, benefit = 0;
+    
+    int valid_flag;
+  
+  
+    _u32 copy_lsn[SECT_NUM_PER_PAGE], copy[SECT_NUM_PER_PAGE];
+    _u16 valid_sect_num, k, l, s;
+  
++   victim_blk_no = pm_gc_cost_benefit();
++ 
+    memset(copy_lsn, 0xFF, sizeof (copy_lsn));
+  
+    s = k = OFF_F_SECT(free_page_no[small]);
+***************
+*** 145,161 ****
+    int lpn = lsn/SECT_NUM_PER_PAGE;					
+    int size_page = size/SECT_NUM_PER_PAGE;   	
+    int ppn;
+  
+    sect_t s_lsn;	
+    sect_t s_psn; 
+    sect_t s_psn1;
+  
+    ASSERT(lpn < pagemap_num);
+    ASSERT(lpn + size_page <= pagemap_num);
+  
+    s_lsn = lpn * SECT_NUM_PER_PAGE;
+  
+!   int small = 1;
+  
+    if (free_page_no[small] >= SECT_NUM_PER_BLK) 
+    {
+--- 149,168 ----
+    int lpn = lsn/SECT_NUM_PER_PAGE;					
+    int size_page = size/SECT_NUM_PER_PAGE;   	
+    int ppn;
++   int small;
++   int sect_num;
+  
+    sect_t s_lsn;	
+    sect_t s_psn; 
+    sect_t s_psn1;
++   sect_t lsns[SECT_NUM_PER_PAGE];;
+  
+    ASSERT(lpn < pagemap_num);
+    ASSERT(lpn + size_page <= pagemap_num);
+  
+    s_lsn = lpn * SECT_NUM_PER_PAGE;
+  
+!   small = 1;
+  
+    if (free_page_no[small] >= SECT_NUM_PER_BLK) 
+    {
+***************
+*** 173,181 ****
+      }
+    }
+  
+-   sect_t lsns[SECT_NUM_PER_PAGE];
+    memset (lsns, 0xFF, sizeof (lsns));
+!   int sect_num = SECT_NUM_PER_PAGE;
+    
+    s_psn = SECTOR(free_blk_no[small], free_page_no[small]);
+  
+--- 180,187 ----
+      }
+    }
+  
+    memset (lsns, 0xFF, sizeof (lsns));
+!   sect_num = SECT_NUM_PER_PAGE;
+    
+    s_psn = SECTOR(free_blk_no[small], free_page_no[small]);
+  
+***************
+*** 236,241 ****
+--- 242,248 ----
+  int pm_init(blk_t blk_num, blk_t extra_num)
+  {
+    int i;
++   int mapdir_num;
+  
+    pagemap_num = blk_num * PAGE_NUM_PER_BLK;
+  
+***************
+*** 246,252 ****
+      return -1;
+    }
+  
+!   int mapdir_num = (pagemap_num / MAP_ENTRIES_PER_PAGE);
+  
+    if((pagemap_num % MAP_ENTRIES_PER_PAGE) != 0){
+      printf("pagemap_num % MAP_ENTRIES_PER_PAGE is not zero\n"); 
+--- 253,259 ----
+      return -1;
+    }
+  
+!   mapdir_num = (pagemap_num / MAP_ENTRIES_PER_PAGE);
+  
+    if((pagemap_num % MAP_ENTRIES_PER_PAGE) != 0){
+      printf("pagemap_num % MAP_ENTRIES_PER_PAGE is not zero\n"); 
+Seulement dans src.release/: pagemap.d
+Seulement dans src.release/: raw_layout.d
+Seulement dans src.release/: rms.d
+Seulement dans src.release/: ssd_interface.d
+Seulement dans src.release/: syssim.d
+diff -crB src.release/syssim_driver.c src/syssim_driver.c
+*** src.release/syssim_driver.c	2009-06-15 00:08:52.000000000 +0200
+--- src/syssim_driver.c	2010-03-24 16:59:24.000000000 +0100
+***************
+
+*** 139,144 ****
+--- 139,153 ----
+  
+    int test_encapsulation;
+    char outfile2[81];
++ 
++   //youkim
++   FILE *fp = fopen(argv[5], "r");
++   double time;
++   int devno, bcount, flags;
++   unsigned int blkno;
++   char buffer[80];
++   unsigned int cnt = 0;
++   int BLOCKSIZE = 512;
+  
+    //if (argc != 5 || (nsectors = atoi(argv[3])) <= 0) {
+    if (argc != 6 || (nsectors = atoi(argv[3])) <= 0) {
+***************
+*** 169,180 ****
+  
+  
+    //youkim
+-   FILE *fp = fopen(argv[5], "r");
+-   double time;
+-   int devno, bcount, flags;
+-   unsigned int blkno;
+-   char buffer[80];
+-   unsigned int cnt = 0;
+            
+    while((fgets(buffer, sizeof(buffer), fp)) && (cnt < 10000)){  
+      cnt++;
+--- 178,183 ----
+***************
+*** 185,191 ****
+      req.devno= 0;
+  
+      req.blkno = blkno;
+-     int BLOCKSIZE = 512;
+      req.bytecount = BLOCKSIZE * bcount;
+      completed = 0;
+  
+--- 188,193 ----
+Seulement dans src.release/: syssim_driver.d
